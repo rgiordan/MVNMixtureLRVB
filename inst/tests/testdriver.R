@@ -6,8 +6,8 @@ testsuite <- defineTestSuite("testsuite",
                                               "tests"),
                              testFileRegexp = "^runit.+\\.R",
                              testFuncRegexp = "^Test.+",
-                             rngKind = "Marsaglia-Multicarry",
-                             rngNormalKind = "Kinderman-Ramage")
+                             rngKind = "Mersenne-Twister",
+                             rngNormalKind = "Inversion")
 
 testResult <- runTestSuite(testsuite)
 printTextProtocol(testResult)

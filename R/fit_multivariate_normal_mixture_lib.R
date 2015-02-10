@@ -534,6 +534,7 @@ GetLRVBCovariance <- function(x, e.mu, e.mu2,
 
 GetLeverageScores <- function(x, e.mu, e.mu2, e.lambda, e.z, lrvb.theta.cov) {
   x.cov <- GetXVariance(x=x)
+  n <- nrow(x)
   htx <- GetHThetaX(e_z=e.z, e_mu=e.mu,
                     e_lambda=e.lambda)
   hzx <- GetHZX(n_tot=n, e_mu=e.mu,
