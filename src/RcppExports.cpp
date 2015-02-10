@@ -2,8 +2,20 @@
 // Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 #include <Rcpp.h>
+#include <RcppEigen.h>
 
-using namespace Rcpp;
+// ...except these were copied in by hand.
+using Eigen::Map;                 // 'maps' rather than copies 
+using Eigen::MatrixXd;                  // variable size matrix, double precision
+using Eigen::VectorXd;                  // variable size vector, double precision
+using Eigen::SparseMatrix;              // sparse matrix
+using Eigen::SparseLU;
+using Eigen::HouseholderQR;
+typedef Eigen::MappedSparseMatrix<double> MappedSpMat;
+typedef Eigen::Map<MatrixXd> MappedMat;
+typedef Eigen::Map<VectorXd> MappedVec;
+using Eigen::HouseholderQR;
+typedef Eigen::Triplet<double> Triplet; // For populating sparse matrices
 
 // GetMatrixSizeFromUTSize
 int GetMatrixSizeFromUTSize(int ut_size);
