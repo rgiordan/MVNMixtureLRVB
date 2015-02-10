@@ -3,6 +3,7 @@
 Install using 
 
 `library(devtools)`
+
 `install_github("rgiordan/MVNMixtureLRVB")`
 
 Apologies for the current poor state of the documentation.  An example comparison between
