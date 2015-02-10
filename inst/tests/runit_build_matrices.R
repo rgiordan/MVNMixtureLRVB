@@ -1,20 +1,14 @@
-library(MVNNormalLRVB)
+library(MVNMixtureLRVB)
 library(RUnit)
 library(Matrix)
 library(mvtnorm)
 library(numDeriv)
-library(gridExtra)
-
-
-setwd(file.path(Sys.getenv("GIT_REPO_LOC"),
-                "variational_bayes/variational_normal_mixture"))
-sourceCpp("build_matrices.cpp", rebuild=FALSE, verbose=TRUE)
-source("fit_multivariate_normal_mixture_lib.R")
-
 
 TestXVariance <- function() {
   # Use a simulation to test the x covariance under infinitesimal perturbations.
 
+  # Set a seed to avoid flakiness.
+  set.seed(42)
   n <- 2
   p <- 3
   x <- matrix(1:(n * p), nrow=n, ncol=p)

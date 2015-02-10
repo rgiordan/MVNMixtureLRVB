@@ -3,3 +3,7 @@ import(RcppEigen)
 importFrom(Rcpp, evalCpp)
 exportPattern("^[[:alpha:]]+")
 
+# This avoids a strange problem with transposing sparse matrices.
+# http://stackoverflow.com/questions/17580935/when-writing-an-r-package-that-uses-the-matrix-package-why-do-i-have-to-specify
+importFrom(Matrix,Matrix)
+importFrom(Matrix,t)

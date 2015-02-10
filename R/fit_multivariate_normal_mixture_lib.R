@@ -1,14 +1,5 @@
-library(RcppEigen)
-library(Rcpp)
 library(Matrix)
 library(mvtnorm)
-
-#' @useDynLib MVNMixtureLRVB
-#' @importFrom Rcpp sourceCpp
-
-working.dir <- file.path(Sys.getenv("GIT_REPO_LOC"),
-                         "variational_bayes/variational_normal_mixture")
-sourceCpp(file.path(working.dir, "build_matrices.cpp"), rebuild=FALSE, verbose=TRUE)
 
 MVLgamma <- function(x, p) {
   return(sum(lgamma(x + (1 - 1:p) / 2)))
@@ -26,7 +17,7 @@ VectorizeMatrixList <- function(mat.list) {
   k <- length(mat.list)
   p  <- nrow(mat.list[[1]])
   result.mat <- matrix(NA, (p * (1 + p)) / 2, k)
-  
+
   for (this.k in 1:k) {
     this.mat <- mat.list[[this.k]]
     stopifnot(nrow(this.mat) == ncol(this.mat))
@@ -49,7 +40,7 @@ GetSymmetricMatrixVectorNames <- function(parameter, p, k=1, sep="_") {
   row.mat <- matrix(rep(as.numeric(1:p)), p, p)
   col.mat <- matrix(rep(as.numeric(1:p), each=p), p, p)
   row.vec <- ConvertSymmetricMatrixToVector(row.mat)
-  col.vec <- ConvertSymmetricMatrixToVector(col.mat)  
+  col.vec <- ConvertSymmetricMatrixToVector(col.mat)
   indices <- paste(row.vec, col.vec, sep=sep)
   paramter.k <- parameter
   if (k > 1) {
@@ -78,7 +69,7 @@ GenerateSampleParams <- function(k, p, vars.scale = 0.4, anisotropy=0, random.ro
       # Random rotation
       rotation <- matrix(runif(p * p), p, p)
       rotation <- rotation %*% t(rotation)
-      rotation <- eigen(rotation)$vectors 
+      rotation <- eigen(rotation)$vectors
       this.sigma <- rotation %*% this.sigma %*% t(rotation)
     }
     max.lambda <- max(eigen(this.sigma)$value)
@@ -104,7 +95,7 @@ GenerateSamplePriors <- function(x, k, lambda.scale=1) {
   for (this.k in 1:k) {
     lambda.prior.v.inv.list[[this.k]] <- lambda.scale * (x.scale ^ 2) * diag(p) / (1000 * p)
   }
-  lambda.prior.v.inv <- VectorizeMatrixList(lambda.prior.v.inv.list)  
+  lambda.prior.v.inv <- VectorizeMatrixList(lambda.prior.v.inv.list)
 
   p.prior.alpha <- rep(1, k)
   return(list(mu.prior.mean=mu.prior.mean, mu.prior.info=mu.prior.info,
@@ -127,18 +118,18 @@ GenerateMultivariateData <- function(n, true.means, true.sigma, true.probs) {
   #   - x: An n by p matrix containing draws from the mixture.
   #   - components: An n by k matrix containing the true components of x.
   #   - component.labels: An n-length vector of the component labels.
-  
+
   p <- nrow(true.means)
-  k <- length(true.probs)  
+  k <- length(true.probs)
   stopifnot(k == length(true.sigma))
   x <- matrix(NA, n, p)
-  
+
   components <- t(rmultinom(n, prob=true.probs, size=1))
   component.n <- colSums(components)
   if (any(component.n == 0)) {
     print("Warning -- one component has no data points.")
   }
-  
+
   for (this.k in 1:k) {
     stopifnot(ncol(true.sigma[[this.k]]) == p)
     stopifnot(nrow(true.sigma[[this.k]]) == p)
@@ -150,9 +141,9 @@ GenerateMultivariateData <- function(n, true.means, true.sigma, true.probs) {
   if (k == 1) {
     component.labels <- components
   } else {
-    component.labels <- 1 + (k - colSums(apply(components, 1, cumsum)))    
+    component.labels <- 1 + (k - colSums(apply(components, 1, cumsum)))
   }
-  
+
   # Convert the components matrix to numeric for C++
   components <- matrix(as.numeric(components), nrow(components), ncol(components))
   return(list(x=x, components=components, component.labels=component.labels))
@@ -175,11 +166,11 @@ GetVariationalSolution <- function(x, e.mu, e.mu2=NULL,
                                    tolerance=1e-5, max.iter=1000, elbo.every.n=Inf,
                                    debug=FALSE, keep.updates=FALSE, quiet=FALSE) {
   # priors should be a list like that returned by GenerateSamplePriors
-  
+
   n <- nrow(x)
   p <- ncol(x)
   k <- ncol(e.mu)
-  
+
   stopifnot(nrow(e.mu) == p)
   stopifnot(nrow(e.z) == n)
   stopifnot(ncol(e.z) == k)
@@ -187,13 +178,13 @@ GetVariationalSolution <- function(x, e.mu, e.mu2=NULL,
   # Make sure everything is a numeric matrix.
   e.mu <- matrix(as.numeric(e.mu), nrow(e.mu), ncol(e.mu))
   e.z <- matrix(as.numeric(e.z), nrow(e.z), ncol(e.z))
-  x <- as.matrix(x)  
-  
+  x <- as.matrix(x)
+
   # If not specified, fit with zero additional mu variance.
   if (is.null(e.mu2)) {
-    e.mu2 <- GetVectorizedOuterProductMatrix(e.mu)    
+    e.mu2 <- GetVectorizedOuterProductMatrix(e.mu)
   }
-  
+
   if (!fit.lambda) {
     if (is.null(e.lambda)) {
       stop("You must specify e.lambda if you do not fit lambda.")
@@ -202,7 +193,7 @@ GetVariationalSolution <- function(x, e.mu, e.mu2=NULL,
       stop("You must specify e.log.det.lambda if you do not fit lambda.")
     }
     e.lambda.inv.mat <- InvertLinearizedMatrices(e.lambda)
-    
+
     # These values don't matter if we're not fitting lambda.
     n.par <- rep(10, k)
     lambda.par <- e.lambda / 10
@@ -215,14 +206,14 @@ GetVariationalSolution <- function(x, e.mu, e.mu2=NULL,
   if (!fit.pi) {
     if (is.null(e.log.pi)) {
       stop("You must specify e.log.pi if you do not fit pi")
-    } 
+    }
     if (is.null(e.pi)) {
       stop("You must specify e.pi if you do not fit pi")
-    } 
+    }
   } else {
     if (is.null(e.log.pi)) {
       # Initialize the pi paraemeters.
-      e.log.pi <- GetELogDirichlet(colSums(e.z))      
+      e.log.pi <- GetELogDirichlet(colSums(e.z))
     }
     if (is.null(e.pi)) {
       e.pi <- colMeans(e.z)
@@ -238,24 +229,24 @@ GetVariationalSolution <- function(x, e.mu, e.mu2=NULL,
   mu.diff <- lambda.diff <- pi.diff <- 0
   while (iter <= max.iter && total.diff > tolerance) {
     if (debug) browser()
-    
+
     # Add zero to force R to allocate new memory.
     iter <- iter + 1
-    
+
     old.e.mu <- e.mu + 1
     old.e.mu <- old.e.mu - 1
     old.e.mu2 <- e.mu2 + 1
     old.e.mu2 <- old.e.mu2 - 1
-    
+
     old.lambda.par <- lambda.par + 1
     old.lambda.par <- old.lambda.par - 1
-    
+
     old.n.par <- n.par + 1
     old.n.par <- old.n.par - 1
-    
+
     old.e.log.pi <- e.log.pi + 1
     old.e.log.pi <- old.e.log.pi - 1
-    
+
     # Lambda update
     if (fit.lambda) {
       lambda.update <- UpdateLambdaPosterior(x=x, e_mu=e.mu, e_mu2=e.mu2, e_z=e.z,
@@ -269,36 +260,36 @@ GetVariationalSolution <- function(x, e.mu, e.mu2=NULL,
       }
       e.log.det.lambda <- WishartELogDet(lambda.par, n.par)
       e.lambda <- rep(n.par, each=p * (p + 1) / 2) * lambda.par
-      e.lambda.inv.mat <- InvertLinearizedMatrices(e.lambda)  
+      e.lambda.inv.mat <- InvertLinearizedMatrices(e.lambda)
       lambda.diff <- sum(abs(lambda.par - old.lambda.par)) + sum(abs(n.par - old.n.par))
     }
-    
+
     # Pi update
     if (fit.pi) {
       e.log.pi <- GetELogDirichlet(colSums(e.z))
       e.pi <- colMeans(e.z)
       pi.diff <- sum(abs(e.log.pi - old.e.log.pi))
     }
-    
+
     # Mu update
     if (fit.mu) {
       mu.update <- UpdateMuPosterior(x=x, e_lambda_inv_mat=e.lambda.inv.mat, e_z=e.z)
       e.mu <- mu.update$e_mu
-      e.mu2 <-  mu.update$e_mu2  
+      e.mu2 <-  mu.update$e_mu2
       if (!is.finite(e.mu) || !is.finite(e.mu2)) {
         browser()
       }
       mu.diff <- sum(abs(e.mu - old.e.mu)) + sum(abs(e.mu2 - old.e.mu2))
     }
-    
+
     # Z update
     GetZMatrixInPlace(z=e.z,
                       x=x, e_mu=e.mu, e_mu2=e.mu2,
                       e_lambda=e.lambda, e_log_det_lambda=e.log.det.lambda,
                       e_log_pi=e.log.pi)
-    
+
     total.diff <- mu.diff + lambda.diff + pi.diff
-    
+
     if (is.finite(elbo.every.n)) {
       if (iter %% elbo.every.n == 0) {
         elbo <- GetVariationalELBO(x=x, e.mu=e.mu, e.mu2=e.mu2,
@@ -306,23 +297,23 @@ GetVariationalSolution <- function(x, e.mu, e.mu2=NULL,
                                    lambda.par=lambda.par, n.par=n.par,
                                    e.log.pi=e.log.pi, e.z=e.z,
                                    priors=priors)
-        elbo.list[[length(elbo.list) + 1]] <- elbo$entropy + elbo$log.lik        
-        entropy.list[[length(entropy.list) + 1]] <- elbo$entropy        
-        log.lik.list[[length(log.lik.list) + 1]] <- elbo$log.lik        
-        
+        elbo.list[[length(elbo.list) + 1]] <- elbo$entropy + elbo$log.lik
+        entropy.list[[length(entropy.list) + 1]] <- elbo$entropy
+        log.lik.list[[length(log.lik.list) + 1]] <- elbo$log.lik
+
       }
     }
-    
+
     if (keep.updates) {
       updates[[iter]] <- list(e.mu=e.mu, e.mu2=e.mu2, e.lambda=e.lambda,
                               e.log.det.lambda=e.log.det.lambda,
                               e.log.pi=e.log.pi, lambda.par=lambda.par, n.par=n.par,
                               z.counts=colSums(e.z))
     }
-    
+
     if (!quiet) {
       print(sprintf("%d: mu: %f, lambda: %f, pi: %f, total: %f",
-                    iter, mu.diff, lambda.diff, pi.diff, total.diff))      
+                    iter, mu.diff, lambda.diff, pi.diff, total.diff))
     }
   }
   return(list(e.mu=e.mu, e.mu2=e.mu2, e.lambda=e.lambda,
@@ -364,24 +355,24 @@ PostProcessVBResults <- function(vb.optimum) {
 
   k <- ncol(vb.optimum$e.mu)
   p <- nrow(vb.optimum$e.mu)
-  
+
   # Get the mu covariances.
   mu.covs <- ListifyVectorizedMatrix(vb.optimum$e.mu2)
   for (this.k in 1:k) {
     mu.covs[[this.k]] <- (mu.covs[[this.k]] -
                           vb.optimum$e.mu[, this.k] %*% t(vb.optimum$e.mu[, this.k]))
   }
-  
+
   # Get the lambda covariance.
   lambda.covs <- list()
   for (this.k in 1:k) {
     lambda.covs[[this.k]] <- GetWishartLinearCovariance(vb.optimum$lambda.par[, this.k],
                                                         vb.optimum$n.par[this.k])
   }
-  
+
   # Get the pi covariance.
   log.pi.cov <- GetLogDirichletCovariance(colSums(vb.optimum$e.z))
-  
+
   return(list(mu.covs=mu.covs, lambda.covs=lambda.covs, log.pi.cov=log.pi.cov))
 }
 
@@ -407,9 +398,9 @@ CoreParameterNamesFromMLE <- function(k, p) {
       }
     }
   }
-  
+
   pi.names <- paste("pi", 1:k, sep="_")
-  
+
   return(c(mu.names,
            lambda.names,
            pi.names))
@@ -430,7 +421,7 @@ CoreMeansFromVB <- function(vb.optimum) {
 
 CoreVarsFromVB <- function(vb.optimum) {
   # Get a vector of variances of mu, lambda, and log(pi) from the VB paramaterization
-  
+
   # The variances of mu:
   var.mu <- vb.optimum$e.mu2 - GetVectorizedOuterProductMatrix(vb.optimum$e.mu)
   var.mu.list <- ListifyVectorizedMatrix(var.mu)
@@ -438,14 +429,14 @@ CoreVarsFromVB <- function(vb.optimum) {
   for (this.k in 1:length(var.mu.list)) {
     var.mu.mat[, this.k] <- diag(var.mu.list[[this.k]])
   }
-  
+
   var.lambda.mat <- matrix(NA, nrow(vb.optimum$e.lambda), ncol(vb.optimum$e.lambda))
-  for (this.k in 1:ncol(vb.optimum$e.lambda)) {  
-    var.lambda.mat[, this.k] <- 
+  for (this.k in 1:ncol(vb.optimum$e.lambda)) {
+    var.lambda.mat[, this.k] <-
       diag(GetWishartLinearCovariance(vb.optimum$lambda.par[, this.k],
                                       vb.optimum$n.par[this.k]))
   }
-  
+
   var.log.pi.mat <- diag(GetLogDirichletCovariance(colSums(vb.optimum$e.z)))
 
   return(c(var.mu.mat, var.lambda.mat, var.log.pi.mat))
@@ -475,7 +466,7 @@ CoreCovFromMLE <- function(mle.means, mle.cov, k, p, n.sims=1e5) {
   #  The covariance of the core parameters, computed by simulation.
   #  Using the delta method to get the variance out of the log Cholesky parameterization
   #  seems not worth the trouble.
-  
+
   draws <- rmvnorm(n.sims, mean=mle.means, sigma=mle.cov)
   core.mle.draws <- t(apply(draws, MARGIN=1,
                             function(par) { CoreParametersFromMLE(par, k, p) }))
@@ -487,15 +478,15 @@ CoreVarsFromMLE <- function(mle.means, mle.cov, k, p, n.sims=1e5) {
  return(diag(mle.cov))
 }
 
-CoreParametersFromGibbs <- function(mu.draws, lambda.draws, pi.draws) {  
+CoreParametersFromGibbs <- function(mu.draws, lambda.draws, pi.draws) {
   gibbs.mu <- colMeans(mu.draws)
   gibbs.lambda <- colMeans(lambda.draws)
   gibbs.log.pi <- colMeans(log(pi.draws))
-  
+
   gibbs.mu.sd <- colSds(mu.draws)
   gibbs.lambda.sd <- colSds(lambda.draws)
   gibbs.log.pi.sd <- colSds(log(pi.draws))
-  
+
   return(list(means=c(gibbs.mu, gibbs.lambda, gibbs.log.pi),
               sds=c(gibbs.mu.sd, gibbs.lambda.sd, gibbs.log.pi.sd)))
 }
@@ -511,7 +502,7 @@ GetThetaCovariance <- function(e.mu, e.mu2, lambda.par, n.par, e.z,
   mu.cov <- GetMuVariance(e.mu, e.mu2)
   lambda.cov <- GetLambdaVariance(lambda.par, n.par)
   log.pi.cov <- GetLogPiVariance(colSums(e.z))
-  
+
   # Zero out the matrices we won't fit.
   if (!fit.mu) {
     mu.cov <- Matrix(0, nrow(mu.cov), ncol(mu.cov))
@@ -522,7 +513,7 @@ GetThetaCovariance <- function(e.mu, e.mu2, lambda.par, n.par, e.z,
   if (!fit.pi) {
     log.pi.cov <- Matrix(0, nrow(log.pi.cov), ncol(log.pi.cov))
   }
-  
+
   return(bdiag(mu.cov, log.pi.cov, lambda.cov))
 }
 
@@ -532,12 +523,12 @@ GetLRVBCovariance <- function(x, e.mu, e.mu2,
                               theta.cov) {
   htz <- GetHThetaZ(x, e.mu, e.mu2, e.lambda)
   htt <- GetHThetaTheta(x, e.z)
-  z.cov <- GetZCovariance(e.z)  
+  z.cov <- GetZCovariance(e.z)
   theta.id <- Diagonal(nrow(theta.cov))
   term1 <- theta.cov %*% htt
-  term2 <- htz %*% z.cov %*% t(htz)
+  term2 <- htz %*% z.cov %*% Matrix::t(htz)
   lrvb.correction <- (theta.id - term1 - theta.cov %*% term2)
-  return(solve(lrvb.correction, theta.cov))
+  return(Matrix::solve(lrvb.correction, theta.cov))
 }
 
 
@@ -575,7 +566,7 @@ GetMuFieldSizeFromCompdraw <- function(compdraw, k.vector, p) {
 }
 
 GetMuFieldFromCompdraw <- function(compdraw, k.vector, p) {
-  draws <- lapply(k.vector, function(i) { 
+  draws <- lapply(k.vector, function(i) {
     matrix(compdraw[[i]][["mu"]], nrow=1)
   })
   return(do.call(cbind, draws))
