@@ -1606,10 +1606,13 @@ Rcpp::List UpdateMuPosterior(const MatrixXd x,
 
       MatrixXd this_e_lambda_inv_mat =
         ConvertVectorToSymmetricMatrix(
-          this_e_lambda_inv_mat.block(0, k, matrix_size, 1));
+          e_lambda_inv_mat.block(0, k, matrix_size, 1));
+      Rcpp::Rcout  << "\n2\n";
       MatrixXd this_mu_prior_info =
         ConvertVectorToSymmetricMatrix(
-          this_mu_prior_info.block(0, k, matrix_size, 1));
+          mu_prior_info.block(0, k, matrix_size, 1));
+      Rcpp::Rcout  << "\n3\n";
+
       VectorXd this_data_mean = e_mu.block(0, k, p_tot, 1);
 
       VectorXd this_mean_vec =
