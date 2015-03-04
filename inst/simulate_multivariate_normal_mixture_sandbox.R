@@ -189,3 +189,9 @@ if (p == 2) {
     geom_vline(data=means.df, aes(xintercept=X1), color="red", size=1) +
     geom_vline(data=vb.means.df, aes(xintercept=X1), color="green", size=1)
 }
+
+
+ggplot() +
+  geom_density2d(data=x.df, aes(x=X1, y=X2), lwd=2) +
+  geom_point(data=means.df, aes(x=X1, y=X2), color="red", size=5) +
+  theme_bw()

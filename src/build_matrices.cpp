@@ -3,10 +3,13 @@
 #include <math.h>
 
 // [[Rcpp::depends(RcppEigen)]]
-using Eigen::Map;                 // 'maps' rather than copies 
-using Eigen::MatrixXd;                  // variable size matrix, double precision
-using Eigen::VectorXd;                  // variable size vector, double precision
-using Eigen::SparseMatrix;              // sparse matrix
+
+// Note that you may need to manually copy these type definitions
+// to RcppExports.cpp after running Rcpp::compileAttributes().
+using Eigen::Map; 
+using Eigen::MatrixXd;
+using Eigen::VectorXd;
+using Eigen::SparseMatrix;
 using Eigen::SparseLU;
 using Eigen::HouseholderQR;
 typedef Eigen::MappedSparseMatrix<double> MappedSpMat;
@@ -37,6 +40,7 @@ void PrintNumericMatrix(Rcpp::NumericMatrix x) {
   }
   Rcpp::Rcout << "\n";
 }
+
 
 ///////////////////////////////////////////
 // Indexing functions
