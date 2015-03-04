@@ -163,6 +163,7 @@ GetVariationalSolution <- function(x, e.mu, e.mu2=NULL,
                                    e.lambda=NULL, e.log.det.lambda=NULL,
                                    e.log.pi=NULL, e.pi=NULL, e.z,
                                    fit.mu=TRUE, fit.lambda=TRUE, fit.pi=TRUE, priors,
+                                   use.lambda.prior=FALSE,
                                    tolerance=1e-5, max.iter=1000, elbo.every.n=Inf,
                                    debug=FALSE, keep.updates=FALSE, quiet=FALSE) {
   # priors should be a list like that returned by GenerateSamplePriors
@@ -250,7 +251,7 @@ GetVariationalSolution <- function(x, e.mu, e.mu2=NULL,
     # Lambda update
     if (fit.lambda) {
       lambda.update <- UpdateLambdaPosterior(x=x, e_mu=e.mu, e_mu2=e.mu2, e_z=e.z,
-                                             use_prior=FALSE,
+                                             use_prior=use.lambda.prior,
                                              lambda_prior_v_inv=priors$lambda.prior.v.inv,
                                              lambda_prior_n=priors$lambda.prior.n)
       lambda.par <- lambda.update$lambda_par

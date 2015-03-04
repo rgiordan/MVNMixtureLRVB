@@ -768,8 +768,8 @@ VectorXd PackXParameters(const MatrixXd x) {
 
 // [[Rcpp::export]]
 Rcpp::List UnpackXParameters(const VectorXd par,
-			     const int n_tot,
-			     const int p_tot) {
+                  			     const int n_tot,
+                  			     const int p_tot) {
   // Reverse PackXParameters.
   XParameterIndices x_ind(n_tot, p_tot);
 
@@ -1031,9 +1031,9 @@ double MVNLogLikelihoodPointWithX2(const VectorXd x,
 
 // [[Rcpp::export]]
 VectorXd LogPriorMu(const MatrixXd e_mu,
-		    const MatrixXd e_mu2,
-		    const MatrixXd mu_prior_mean,
-		    const MatrixXd mu_prior_info) {
+            		    const MatrixXd e_mu2,
+            		    const MatrixXd mu_prior_mean,
+            		    const MatrixXd mu_prior_info) {
   //  Return the log prior on mu up to a constant.
   //
   // Args:
@@ -1071,11 +1071,11 @@ VectorXd LogPriorMu(const MatrixXd e_mu,
   for (int k = 0; k < k_tot; k++) {
     // Since mu is MVN itself, we can use the MVN log likelihood function
     log_prior(k) = MVNLogLikelihoodPoint(mu_prior_mean.block(0, k, p_tot, 1),
-					 e_mu.block(0, k, p_tot, 1),
-					 e_mu2.block(0, k, matrix_size, 1),
-					 mu_prior_info.block(0, k, matrix_size, 1),
-					 mu_prior_log_det_info(k),
-					 0);
+                              					 e_mu.block(0, k, p_tot, 1),
+                              					 e_mu2.block(0, k, matrix_size, 1),
+                              					 mu_prior_info.block(0, k, matrix_size, 1),
+                              					 mu_prior_log_det_info(k),
+                              					 0);
   }
 
   return log_prior;
@@ -1084,9 +1084,9 @@ VectorXd LogPriorMu(const MatrixXd e_mu,
 
 // [[Rcpp::export]]
 VectorXd LogPriorLambda(const MatrixXd e_lambda,
-			const VectorXd e_log_det_lambda,
-			const MatrixXd lambda_prior_v_inv,
-			const VectorXd lambda_prior_n) {
+                  			const VectorXd e_log_det_lambda,
+                  			const MatrixXd lambda_prior_v_inv,
+                  			const VectorXd lambda_prior_n) {
   // The logarithm of the Wishart prior up to a constant.
   //
   // Args:
@@ -1119,8 +1119,8 @@ VectorXd LogPriorLambda(const MatrixXd e_lambda,
     log_prior(k) = lambda_prior_n(k) * e_log_det_lambda(k) / 2.0;
     for (int a = 0; a < p_tot; a++) {
       for (int b = 0; b < p_tot; b++) {
-	int this_index = GetUpperTriangularIndex(a, b);
-	log_prior(k) -= 0.5 * e_lambda(this_index) * lambda_prior_v_inv(this_index);
+      	int this_index = GetUpperTriangularIndex(a, b);
+      	log_prior(k) -= 0.5 * e_lambda(this_index) * lambda_prior_v_inv(this_index);
       }
     }
   }
@@ -1130,7 +1130,7 @@ VectorXd LogPriorLambda(const MatrixXd e_lambda,
 
 // [[Rcpp::export]]
 VectorXd LogPriorPi(const VectorXd e_log_pi,
-		    const VectorXd pi_prior_alpha) {
+            		    const VectorXd pi_prior_alpha) {
   // Returns the log pi prior up to a constant.
   //
   // Args:
@@ -1517,8 +1517,8 @@ double GetVariationalEntropy(const MatrixXd z,
 
 // [[Rcpp::export]]
 Rcpp::List UpdateMuPosterior(const MatrixXd x,
-			     const MatrixXd e_lambda_inv_mat,
-			     const MatrixXd e_z) {
+                  			     const MatrixXd e_lambda_inv_mat,
+                  			     const MatrixXd e_z) {
   // Args:
   //     to be updated.
   //   - x: An n by p data matrix
@@ -1575,12 +1575,12 @@ Rcpp::List UpdateMuPosterior(const MatrixXd x,
     for (int p = 0; p < p_tot; p++) {
       double sum_x_z = 0.0;
       for (int n = 0; n < n_tot; n++) {
-	if (p == 0) {
-	  // Only add up the z total for this k on the first pass through p
-	  // since it won't change.
-	  z_tot += e_z(n, k);
-	}
-	sum_x_z += e_z(n, k) * x(n, p);
+      	if (p == 0) {
+      	  // Only add up the z total for this k on the first pass through p
+      	  // since it won't change.
+      	  z_tot += e_z(n, k);
+      	}
+      	sum_x_z += e_z(n, k) * x(n, p);
       }
       e_mu(p, k) = sum_x_z / z_tot;
     } // p loop
@@ -1588,8 +1588,8 @@ Rcpp::List UpdateMuPosterior(const MatrixXd x,
     // Update the Cov(mu_a, mu_b) terms.
     for (int a = 0; a < p_tot; a++) {
       for (int b = 0; b < p_tot; b++) {
-	int this_index = GetUpperTriangularIndex(a, b);
-	e_mu2(this_index, k) = (e_lambda_inv_mat(this_index, k) / z_tot +
+      	int this_index = GetUpperTriangularIndex(a, b);
+      	e_mu2(this_index, k) = (e_lambda_inv_mat(this_index, k) / z_tot +
 				e_mu(a, k) * e_mu(b, k));
       }
     }
@@ -1602,12 +1602,12 @@ Rcpp::List UpdateMuPosterior(const MatrixXd x,
 
 // [[Rcpp::export]]
 Rcpp::List UpdateLambdaPosterior(const MatrixXd x,
-				 const MatrixXd e_mu,
-				 const MatrixXd e_mu2,
-				 const MatrixXd e_z,
-				 const bool use_prior,
-				 const MatrixXd lambda_prior_v_inv,
-				 const VectorXd lambda_prior_n) {
+                        				 const MatrixXd e_mu,
+                        				 const MatrixXd e_mu2,
+                        				 const MatrixXd e_z,
+                        				 const bool use_prior,
+                        				 const MatrixXd lambda_prior_v_inv,
+                        				 const VectorXd lambda_prior_n) {
   // Args:
   //  - e_mu: A p by k matrix of E_q (mu) to be updated
   //  - e_mu2: A (p + 1) * p / 2 by k matrix of Cov_q(mu_i, mu_j)
@@ -1663,8 +1663,8 @@ Rcpp::List UpdateLambdaPosterior(const MatrixXd x,
     MatrixXd v_inv(p_tot, p_tot);
     if (use_prior) {
       v_inv =
-	ConvertVectorToSymmetricMatrix(lambda_prior_v_inv.block(0, k,
-								matrix_size, 1));
+      	ConvertVectorToSymmetricMatrix(lambda_prior_v_inv.block(0, k,
+      					                          			                matrix_size, 1));
       n_par(k) = lambda_prior_n(k);
     } else {
       v_inv.setZero();
@@ -1675,43 +1675,43 @@ Rcpp::List UpdateLambdaPosterior(const MatrixXd x,
       double this_z = e_z(n, k);
       n_par(k) += this_z;
       for (int a = 0; a < p_tot; a++) {
-	for (int b = 0; b <= a; b++) {
-	  // TODO: upon reflection, maybe it makes more sense for x to
-	  // be stored with each column being one observation rather
-	  // than each row to avoid looking values up across columns.
-	  double this_term = (x(n, a) * x(n, b) -
-			      e_mu(a, k) * x(n, b) -
-			      e_mu(b, k) * x(n, a) +
-			      e_mu2(GetUpperTriangularIndex(a, b), k)) * this_z;
-	  v_inv(a, b) += this_term;
-	}
+      	for (int b = 0; b <= a; b++) {
+      	  // TODO: upon reflection, maybe it makes more sense for x to
+      	  // be stored with each column being one observation rather
+      	  // than each row to avoid looking values up across columns.
+      	  double this_term = (x(n, a) * x(n, b) -
+                  			      e_mu(a, k) * x(n, b) -
+                  			      e_mu(b, k) * x(n, a) +
+                  			      e_mu2(GetUpperTriangularIndex(a, b), k)) * this_z;
+      	  v_inv(a, b) += this_term;
+      	}
       }
     } // n loop
 
     // Make v_inv symmetric.
     for (int a = 0; a < p_tot; a++) {
       for (int b = 0; b < a; b++) {
-	v_inv(b, a) = v_inv(a, b);
+      	v_inv(b, a) = v_inv(a, b);
       }
     }
     
     MatrixXd v = v_inv.inverse();
     for (int a = 0; a < p_tot; a++) {
       for (int b = 0; b <= a; b++) {
-	// TODO: remove this sanity check
-	int row_index = GetUpperTriangularIndex(a, b);
-	if (row_index > lambda_par.rows()) {
-	  Rcpp::Rcout << "Bad row index: " << row_index << "\n";
-	}
-	if (k > lambda_par.cols()) {
-	  Rcpp::Rcout << "Bad column index: " << k << "\n";
-	}
-	lambda_par(row_index, k) = v(a, b);
+      	// TODO: remove this sanity check
+      	int row_index = GetUpperTriangularIndex(a, b);
+      	if (row_index > lambda_par.rows()) {
+      	  Rcpp::Rcout << "Bad row index: " << row_index << "\n";
+      	}
+      	if (k > lambda_par.cols()) {
+      	  Rcpp::Rcout << "Bad column index: " << k << "\n";
+      	}
+      	lambda_par(row_index, k) = v(a, b);
       }
     }
   } // k loop
   return Rcpp::List::create(Rcpp::Named("lambda_par") = lambda_par,
-			    Rcpp::Named("n_par") = n_par);
+			                      Rcpp::Named("n_par") = n_par);
 
 }
 
