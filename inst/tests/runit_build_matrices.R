@@ -532,20 +532,7 @@ TestUpdateFunctionsWithPriors <- function() {
   
   # Pi update
   e.log.pi <- GetELogDirichlet(colSums(z))
-  
-  for (this.k in 1:k) {
-    this.mu <- matrix(rep(e.mu[, this.k], each=n), n, p)
-    this.z <- z[, this.k]
-    v.inv <- (t(this.z * x) %*% x - t(this.z * x) %*% this.mu - t(this.mu) %*% (this.z * x) +
-                sum(this.z) * ConvertVectorToSymmetricMatrix(e.mu2[, this.k]))
-    v <- solve(v.inv)
-    checkEqualsNumeric(ConvertSymmetricMatrixToVector(v), lambda.par[, this.k])
-    
-    # TODO: this is wrong!  E(log(det(V))) != log(det(E(V))),
-    checkEquals(log(det(v)) + p * log(2) + MVDigamma(n.par[[this.k]] / 2, p),
-                e.log.det.lambda[this.k])
-  }
-  
+
   # Z update
   GetZMatrixInPlace(z=z,
                     x=x, e_mu=e.mu, e_mu2=e.mu2,
@@ -556,6 +543,8 @@ TestUpdateFunctionsWithPriors <- function() {
   mu.update <- UpdateMuPosterior(x=x, e_lambda_inv_mat=e.lambda.inv.mat, e_z=z)
   e.mu <- mu.update$e_mu
   e.mu2 <- mu.update$e_mu2
+  
+  
   for (this.k in 1:k) {
     this.z <- z[, this.k]
     expected.mean <- colSums(this.z * x) / sum(this.z)
