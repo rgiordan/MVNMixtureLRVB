@@ -141,8 +141,8 @@ GetVariationalEntropy <- function(z, mu, mu2, lambda_par, n_par, pi_par) {
     .Call('MVNMixtureLRVB_GetVariationalEntropy', PACKAGE = 'MVNMixtureLRVB', z, mu, mu2, lambda_par, n_par, pi_par)
 }
 
-UpdateMuPosterior <- function(x, e_lambda_inv_mat, e_z) {
-    .Call('MVNMixtureLRVB_UpdateMuPosterior', PACKAGE = 'MVNMixtureLRVB', x, e_lambda_inv_mat, e_z)
+UpdateMuPosterior <- function(x, e_lambda_inv_mat, e_z, use_prior, e_lambda_mat, mu_prior_mean, mu_prior_info) {
+    .Call('MVNMixtureLRVB_UpdateMuPosterior', PACKAGE = 'MVNMixtureLRVB', x, e_lambda_inv_mat, e_z, use_prior, e_lambda_mat, mu_prior_mean, mu_prior_info)
 }
 
 UpdateLambdaPosterior <- function(x, e_mu, e_mu2, e_z, use_prior, lambda_prior_v_inv, lambda_prior_n) {

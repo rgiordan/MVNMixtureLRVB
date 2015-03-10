@@ -5,6 +5,7 @@
 #include <Rcpp.h>
 
 using namespace Rcpp;
+
 using Eigen::Map; 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -632,8 +633,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // UpdateMuPosterior
-Rcpp::List UpdateMuPosterior(const MatrixXd x, const MatrixXd e_lambda_inv_mat, const MatrixXd e_z);
-RcppExport SEXP MVNMixtureLRVB_UpdateMuPosterior(SEXP xSEXP, SEXP e_lambda_inv_matSEXP, SEXP e_zSEXP) {
+Rcpp::List UpdateMuPosterior(const MatrixXd x, const MatrixXd e_lambda_inv_mat, const MatrixXd e_z, const bool use_prior, const MatrixXd e_lambda_mat, const MatrixXd mu_prior_mean, const MatrixXd mu_prior_info);
+RcppExport SEXP MVNMixtureLRVB_UpdateMuPosterior(SEXP xSEXP, SEXP e_lambda_inv_matSEXP, SEXP e_zSEXP, SEXP use_priorSEXP, SEXP e_lambda_matSEXP, SEXP mu_prior_meanSEXP, SEXP mu_prior_infoSEXP) {
 BEGIN_RCPP
     SEXP __sexp_result;
     {
@@ -641,7 +642,11 @@ BEGIN_RCPP
         Rcpp::traits::input_parameter< const MatrixXd >::type x(xSEXP );
         Rcpp::traits::input_parameter< const MatrixXd >::type e_lambda_inv_mat(e_lambda_inv_matSEXP );
         Rcpp::traits::input_parameter< const MatrixXd >::type e_z(e_zSEXP );
-        Rcpp::List __result = UpdateMuPosterior(x, e_lambda_inv_mat, e_z);
+        Rcpp::traits::input_parameter< const bool >::type use_prior(use_priorSEXP );
+        Rcpp::traits::input_parameter< const MatrixXd >::type e_lambda_mat(e_lambda_matSEXP );
+        Rcpp::traits::input_parameter< const MatrixXd >::type mu_prior_mean(mu_prior_meanSEXP );
+        Rcpp::traits::input_parameter< const MatrixXd >::type mu_prior_info(mu_prior_infoSEXP );
+        Rcpp::List __result = UpdateMuPosterior(x, e_lambda_inv_mat, e_z, use_prior, e_lambda_mat, mu_prior_mean, mu_prior_info);
         PROTECT(__sexp_result = Rcpp::wrap(__result));
     }
     UNPROTECT(1);

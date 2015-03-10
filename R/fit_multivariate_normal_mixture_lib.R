@@ -164,6 +164,8 @@ GetVariationalSolution <- function(x, e.mu, e.mu2=NULL,
                                    e.log.pi=NULL, e.pi=NULL, e.z,
                                    fit.mu=TRUE, fit.lambda=TRUE, fit.pi=TRUE, priors,
                                    use.lambda.prior=FALSE,
+                                   use.mu.prior=FALSE,
+                                   use.pi.prior=FALSE,
                                    tolerance=1e-5, max.iter=1000, elbo.every.n=Inf,
                                    debug=FALSE, keep.updates=FALSE, quiet=FALSE) {
   # priors should be a list like that returned by GenerateSamplePriors
@@ -267,14 +269,21 @@ GetVariationalSolution <- function(x, e.mu, e.mu2=NULL,
 
     # Pi update
     if (fit.pi) {
-      e.log.pi <- GetELogDirichlet(colSums(e.z))
-      e.pi <- colMeans(e.z)
+      pi.alpha <- colSums(e.z)
+      if (use.pi.prior) {
+        pi.alpha <- pi.alpha + priors$p.prior.alpha
+      }
+      e.log.pi <- GetELogDirichlet(pi.alpha)
+      e.pi <- pi.alpha / n 
       pi.diff <- sum(abs(e.log.pi - old.e.log.pi))
     }
 
     # Mu update
     if (fit.mu) {
-      mu.update <- UpdateMuPosterior(x=x, e_lambda_inv_mat=e.lambda.inv.mat, e_z=e.z)
+      mu.update <- UpdateMuPosterior(x=x, e_lambda_inv_mat=e.lambda.inv.mat, e_z=e.z,
+                                     e_lambda_mat=e.lambda, use_prior=use.mu.prior,
+                                     mu_prior_mean=priors$mu.prior.mean,
+                                     mu_prior_info=priors$mu.prior.info)
       e.mu <- mu.update$e_mu
       e.mu2 <-  mu.update$e_mu2
       if (!is.finite(e.mu) || !is.finite(e.mu2)) {

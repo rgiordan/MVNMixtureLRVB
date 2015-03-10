@@ -427,8 +427,10 @@ TestUpdateFunctions <- function() {
   lambda.par <- matrix(0, p * (p + 1) / 2, k)
   n.par <- rep(0, k)
 
-  # Lambda update
+  # A placeholder for unused prior arguments.
   empty.prior <- matrix(0, 1, 1)
+  
+  # Lambda update
   lambda.update <- UpdateLambdaPosterior(x=x, e_mu=e.mu, e_mu2=e.mu2, e_z=z,
                                          FALSE, empty.prior, 0)
   lambda.par <- lambda.update$lambda_par
@@ -460,7 +462,10 @@ TestUpdateFunctions <- function() {
                     e_log_pi=e.log.pi)
 
   # Mu update
-  mu.update <- UpdateMuPosterior(x=x, e_lambda_inv_mat=e.lambda.inv.mat, e_z=z)
+  mu.update <- UpdateMuPosterior(x=x, e_lambda_inv_mat=e.lambda.inv.mat, e_z=z,
+                                 use_prior=FALSE,
+                                 e_lambda=empty.prior, mu_prior_mean=empty.prior,
+                                 mu_prior_info=empty.prior)
   e.mu <- mu.update$e_mu
   e.mu2 <- mu.update$e_mu2
   for (this.k in 1:k) {
@@ -788,6 +793,115 @@ TestLRVBFunctions <- function() {
                                  e.lambda=vb.optimum$e.lambda, e.z=vb.optimum$e.z,
                                  lrvb.theta.cov=lrvb.theta.cov)
   checkEqualsNumeric(tx.cov, tx.cov.v2)
+}
+
+
+TestUpdateFunctionsWithPriors <- function () {
+  n <- 10
+  k <- 2
+  p <- 3
+  matrix.size <- p * (p + 1) / 2
+  par <- GenerateSampleParams(k=k, p=p, vars.scale=0.4^2)
+  par$true.probs <- rep(1 / k, k)
+  data <- GenerateMultivariateData(n,
+                                   true.means = par$true.means,
+                                   true.probs = par$true.probs,
+                                   true.sigma = par$true.sigma)
+  x <- data$x
+  true.sigma.mat <- VectorizeMatrixList(par$true.sigma)
+  e.mu <- matrix(as.numeric(par$true.means), nrow(par$true.means), ncol(par$true.means))
+  e.mu2 <- (true.sigma.mat / rep(colSums(data$components), each=nrow(true.sigma.mat)) +
+              GetVectorizedOuterProductMatrix(par$true.means))
+  z <- matrix(as.numeric(data$components), nrow(data$components), ncol(data$components))
+  
+  lambda.par <- matrix(0, p * (p + 1) / 2, k)
+  n.par <- rep(0, k)
+  
+  # Make some priors
+  priors <- GenerateSamplePriors(x, k, 10)
+  
+  # Lambda update.
+  # Check the n prior:
+  lambda.update.1 <-
+    UpdateLambdaPosterior(x=x, e_mu=e.mu, e_mu2=e.mu2, e_z=z,
+                          TRUE, priors$lambda.prior.v.inv, rep(1.0, k))
+  lambda.update.2 <-
+    UpdateLambdaPosterior(x=x, e_mu=e.mu, e_mu2=e.mu2, e_z=z,
+                          TRUE, priors$lambda.prior.v.inv, rep(1001.0, k))
+  
+  checkEqualsNumeric(lambda.update.2$n_par - lambda.update.1$n_par, rep(1000, k))
+  checkEqualsNumeric(lambda.update.2$lambda_par, lambda.update.1$lambda_par)
+  
+  # Check the v.inv prior:
+  lambda.prior.v.inv <- matrix(ConvertSymmetricMatrixToVector(diag(p)), matrix.size, k)
+  lambda.update.1 <-
+    UpdateLambdaPosterior(x=x, e_mu=e.mu, e_mu2=e.mu2, e_z=z,
+                          TRUE, lambda.prior.v.inv, rep(1.0, k))
+  lambda.update.2 <-
+    UpdateLambdaPosterior(x=x, e_mu=e.mu, e_mu2=e.mu2, e_z=z,
+                          TRUE, 2 * lambda.prior.v.inv, rep(1.0, k))
+  v.par.1 <- solve(ConvertVectorToSymmetricMatrix(lambda.update.1$lambda_par[,1]))
+  v.par.2 <- solve(ConvertVectorToSymmetricMatrix(lambda.update.2$lambda_par[,1]))
+  
+  checkEqualsNumeric(lambda.update.2$n_par, lambda.update.1$n_par)
+  checkEqualsNumeric(v.par.2 - v.par.1, diag(p))
+  
+  # For the tests below just use one with no prior.
+  lambda.update <-
+    UpdateLambdaPosterior(x=x, e_mu=e.mu, e_mu2=e.mu2, e_z=z,
+                          FALSE, priors$lambda.prior.v.inv, rep(0.0, k))
+  lambda.par <- lambda.update$lambda_par
+  n.par <- lambda.update$n_par
+  e.log.det.lambda <- WishartELogDet(lambda.par, n.par)
+  e.lambda <- rep(n.par, each=p * (p + 1) / 2) * lambda.par
+  e.lambda.inv.mat <- InvertLinearizedMatrices(e.lambda)
+  
+  # Pi update
+  e.log.pi <- GetELogDirichlet(colSums(z))
+  
+  # Z update
+  GetZMatrixInPlace(z=z,
+                    x=x, e_mu=e.mu, e_mu2=e.mu2,
+                    e_lambda=e.lambda, e_log_det_lambda=e.log.det.lambda,
+                    e_log_pi=e.log.pi)
+  
+  # Mu update
+  
+  # First check a non-informative prior.
+  mu.prior.info <- 0 * diag(p)
+  mu.prior.mat <- matrix(2, p, k)
+  mu.prior.info.mat <- matrix(ConvertSymmetricMatrixToVector(mu.prior.info), matrix.size, k)
+  mu.update <- UpdateMuPosterior(x=x, e_lambda_inv_mat=e.lambda.inv.mat, e_z=z,
+                                 e_lambda_mat=e.lambda,
+                                 use_prior=TRUE, mu.prior.mat, mu.prior.info.mat)
+  mu.update.flat.prior <- UpdateMuPosterior(x=x, e_lambda_inv_mat=e.lambda.inv.mat, e_z=z,
+                                            e_lambda_mat=e.lambda,
+                                            use_prior=FALSE, mu.prior.mat, mu.prior.info.mat)
+  checkEquals(mu.update$e_mu, mu.update.flat.prior$e_mu)
+  checkEquals(mu.update$e_mu2, mu.update.flat.prior$e_mu2)
+  
+  
+  mu.prior.info <- 2 * diag(p)
+  mu.prior.mat <- matrix(2, p, k)
+  mu.prior.info.mat <- matrix(ConvertSymmetricMatrixToVector(mu.prior.info), matrix.size, k)
+  mu.update <- UpdateMuPosterior(x=x, e_lambda_inv_mat=e.lambda.inv.mat, e_z=z,
+                                 e_lambda_mat=e.lambda,
+                                 use_prior=TRUE, mu.prior.mat, mu.prior.info.mat)
+  mu.update.flat.prior <- UpdateMuPosterior(x=x, e_lambda_inv_mat=e.lambda.inv.mat, e_z=z,
+                                            e_lambda_mat=e.lambda,
+                                            use_prior=FALSE, mu.prior.mat, mu.prior.info.mat)
+  
+  for (this.k in 1:k) {
+    mu.data.mean <- mu.update.flat.prior$e_mu[, this.k]
+    mu.data.var <-
+      ConvertVectorToSymmetricMatrix(mu.update.flat.prior$e_mu2[, this.k]) -
+      mu.data.mean %*% t(mu.data.mean)
+    mu.data.info <- solve(mu.data.var)
+    mu.prior.info <- ConvertVectorToSymmetricMatrix(mu.prior.info.mat[, this.k])
+    mu.prior.mean <- solve(mu.data.info + mu.prior.info,
+                           mu.data.info %*% mu.data.mean + mu.prior.info %*% mu.prior.mat[, this.k])
+    checkEqualsNumeric(mu.prior.mean, mu.update$e_mu[, this.k])
+  }
 }
 
 #

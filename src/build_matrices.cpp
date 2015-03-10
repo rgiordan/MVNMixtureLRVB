@@ -1520,15 +1520,19 @@ Rcpp::List UpdateMuPosterior(const MatrixXd x,
                   			     const MatrixXd e_lambda_inv_mat,
                   			     const MatrixXd e_z,
                              const bool use_prior,
+                             const MatrixXd e_lambda_mat,
                              const MatrixXd mu_prior_mean,
                              const MatrixXd mu_prior_info) {
   // Args:
   //     to be updated.
   //   - x: An n by p data matrix
   //   - e_sigma_mat: The inverse of the expectation of the variational
-  //     lambda matrix, which is (p + 1) * p / 2 by k.
+  //     lambda matrix, which is (p + 1) * p / 2 by k.  Only necessary
+  //     if use_prior is false.
   //   - e_z: A z by k matrix of E_q(z).
   //   - use_prior: If true, shrink towards the prior parameters.
+  //   - e_lambda_mat: The expected lambda matrix, whhic his (p + 1) * p / 2
+  //     by k.  Only necessary if use_prior is true.
   //   - mu_prior_mean: The prior mean (in the same form as e_mu)
   //   - mu_prior_info: The prior information matrix (in the same form
   //     as e_lambda_inv_mat).
@@ -1565,17 +1569,26 @@ Rcpp::List UpdateMuPosterior(const MatrixXd x,
     return Rcpp::List::create(Rcpp::Named("empty") = 0.0);
     }
 
+    if (e_lambda_mat.cols() != k_tot) {
+      Rcpp::Rcout << "e_lambda_mat has the wrong number of columns.\n";
+      return Rcpp::List::create(Rcpp::Named("empty") = 0.0);
+    }
+    if (e_lambda_mat.rows() != matrix_size) {
+      Rcpp::Rcout << "e_lambda_mat has the wrong number of columns.\n";
+      return Rcpp::List::create(Rcpp::Named("empty") = 0.0);
+    }
+
     // The identity matrix is only used if there's a prior.
     identity_p.setIdentity();
-  }
-
-  if (e_lambda_inv_mat.cols() != k_tot) {
-    Rcpp::Rcout << "e_lambda_inv_mat has the wrong number of columns.\n";
-    return Rcpp::List::create(Rcpp::Named("empty") = 0.0);
-  }
-  if (e_lambda_inv_mat.rows() != matrix_size) {
-    Rcpp::Rcout << "e_lambda_inv_mat has the wrong number of columns.\n";
-    return Rcpp::List::create(Rcpp::Named("empty") = 0.0);
+  } else {
+    if (e_lambda_inv_mat.cols() != k_tot) {
+      Rcpp::Rcout << "e_lambda_inv_mat has the wrong number of columns.\n";
+      return Rcpp::List::create(Rcpp::Named("empty") = 0.0);
+    }
+    if (e_lambda_inv_mat.rows() != matrix_size) {
+      Rcpp::Rcout << "e_lambda_inv_mat has the wrong number of columns.\n";
+      return Rcpp::List::create(Rcpp::Named("empty") = 0.0);
+    }
   }
   if (e_z.rows() != n_tot) {
     Rcpp::Rcout << "e_z has the wrong number of rows.\n";
@@ -1601,26 +1614,26 @@ Rcpp::List UpdateMuPosterior(const MatrixXd x,
 
     if (use_prior) {
       // Using formula (3.13) from Gelman's Bayesian Data Analysis.
-      // TODO: This could surely be done better, I'm only adding it
-      //       after the fact.
+      // TODO: This could surely be done more efficiently.
 
-      MatrixXd this_e_lambda_inv_mat =
+      // TODO: this section is wrong: lambda is the information,
+      // and the inverse is the variance.
+
+      MatrixXd this_e_lambda_mat =
         ConvertVectorToSymmetricMatrix(
-          e_lambda_inv_mat.block(0, k, matrix_size, 1));
-      Rcpp::Rcout  << "\n2\n";
+          e_lambda_mat.block(0, k, matrix_size, 1));
       MatrixXd this_mu_prior_info =
         ConvertVectorToSymmetricMatrix(
           mu_prior_info.block(0, k, matrix_size, 1));
-      Rcpp::Rcout  << "\n3\n";
 
       VectorXd this_data_mean = e_mu.block(0, k, p_tot, 1);
 
       VectorXd this_mean_vec =
         this_mu_prior_info * mu_prior_mean.block(0, k, p_tot, 1) +
-        z_tot * this_e_lambda_inv_mat * this_data_mean;
+        z_tot * this_e_lambda_mat * this_data_mean;
 
       Eigen::LLT<MatrixXd> info_llt;
-      info_llt.compute(z_tot * this_e_lambda_inv_mat + this_mu_prior_info);
+      info_llt.compute(z_tot * this_e_lambda_mat + this_mu_prior_info);
       this_mean_vec = info_llt.solve(this_mean_vec);
       MatrixXd this_variance = info_llt.solve(identity_p);
 
