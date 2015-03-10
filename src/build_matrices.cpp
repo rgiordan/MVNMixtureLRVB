@@ -1633,7 +1633,7 @@ Rcpp::List UpdateMuPosterior(const MatrixXd x,
         z_tot * this_e_lambda_mat * this_data_mean;
 
       Eigen::LLT<MatrixXd> info_llt;
-      info_llt.compute(z_tot * this_e_lambda_mat + this_mu_prior_info);
+      info_llt.compute(z_tot * this_e_lambda_inv_mat + this_mu_prior_info);
       this_mean_vec = info_llt.solve(this_mean_vec);
       MatrixXd this_variance = info_llt.solve(identity_p);
 
@@ -1960,7 +1960,7 @@ double GetFourthOrderCovariance(const MatrixXd mu_par,
 
 // [[Rcpp::export]]
 SparseMatrix<double> GetMuVariance(const MatrixXd mu_par,
-				   const MatrixXd mu2_par) {
+				                           const MatrixXd mu2_par) {
   // Args:
   //   - mu_par: A p by k matrix of variational E(mu)
   //   - mu2_par: A (p + 1) * p / 2 by k matrix of variational E(mu_i mu_j)
@@ -2002,15 +2002,15 @@ SparseMatrix<double> GetMuVariance(const MatrixXd mu_par,
     for (int j = 0; j < p_tot; j++) {
       int this_mu_index = ind.MuOnlyMuCoord(k, j);
       for (int i = 0; i <= j; i++) {
-	double this_cov = mu_cov(GetUpperTriangularIndex(i, j), k);
-	var_mu_t.push_back(Triplet(this_mu_index,
-				   ind.MuOnlyMuCoord(k, i),
-				   this_cov));
-	if (i != j) {
-	  var_mu_t.push_back(Triplet(ind.MuOnlyMuCoord(k, i),
-				     this_mu_index,
-				     this_cov));
-	}
+      	double this_cov = mu_cov(GetUpperTriangularIndex(i, j), k);
+      	var_mu_t.push_back(Triplet(this_mu_index,
+                        				   ind.MuOnlyMuCoord(k, i),
+                        				   this_cov));
+      	if (i != j) {
+      	  var_mu_t.push_back(Triplet(ind.MuOnlyMuCoord(k, i),
+                        				     this_mu_index,
+                        				     this_cov));
+      	}
       }
     } // End of mu_j loop
 
@@ -2018,34 +2018,34 @@ SparseMatrix<double> GetMuVariance(const MatrixXd mu_par,
     for (int a = 0; a < p_tot; a++) {
       double m_a = mu_par(a, k);
       for (int b = 0; b <= a; b++) {
-	double m_b = mu_par(b, k);
-	for (int c = 0; c < p_tot; c++) {
-	  double cov_ac = mu_cov(GetUpperTriangularIndex(a, c), k);
-	  double cov_bc = mu_cov(GetUpperTriangularIndex(b, c), k);
-	  double this_cov = m_a * cov_bc + m_b * cov_ac;
-	  var_mu_t.push_back(Triplet(ind.MuOnlyMuCoord(k, c),
-				     ind.MuOnlyMu2Coord(k, a, b),
-				     this_cov));
-	  var_mu_t.push_back(Triplet(ind.MuOnlyMu2Coord(k, a, b),
-				     ind.MuOnlyMuCoord(k, c),
-				     this_cov));
-	}
+      	double m_b = mu_par(b, k);
+      	for (int c = 0; c < p_tot; c++) {
+      	  double cov_ac = mu_cov(GetUpperTriangularIndex(a, c), k);
+      	  double cov_bc = mu_cov(GetUpperTriangularIndex(b, c), k);
+      	  double this_cov = m_a * cov_bc + m_b * cov_ac;
+      	  var_mu_t.push_back(Triplet(ind.MuOnlyMuCoord(k, c),
+      				     ind.MuOnlyMu2Coord(k, a, b),
+      				     this_cov));
+      	  var_mu_t.push_back(Triplet(ind.MuOnlyMu2Coord(k, a, b),
+      				     ind.MuOnlyMuCoord(k, c),
+      				     this_cov));
+      	}
       }
     }
 
     // Get covariance of quadratic terms with other quadratic terms.
     for (int a = 0; a < p_tot; a++) {
       for (int b = 0; b <= a; b++) {
-	for (int c = 0; c < p_tot; c++) {
-	  for (int d = 0; d <= c; d++) {
-	    double this_cov = GetFourthOrderCovariance(mu_par,
-						       mu_cov, k,
-						       a, b, c, d);
-	    var_mu_t.push_back(Triplet(ind.MuOnlyMu2Coord(k, a, b),
-				       ind.MuOnlyMu2Coord(k, c, d),
-				       this_cov));
-	  }
-	}
+      	for (int c = 0; c < p_tot; c++) {
+      	  for (int d = 0; d <= c; d++) {
+      	    double this_cov = GetFourthOrderCovariance(mu_par,
+      						       mu_cov, k,
+      						       a, b, c, d);
+      	    var_mu_t.push_back(Triplet(ind.MuOnlyMu2Coord(k, a, b),
+      				       ind.MuOnlyMu2Coord(k, c, d),
+      				       this_cov));
+      	  }
+      	}
       }
     }
   } // End of k loop
@@ -2695,10 +2695,10 @@ SparseMatrix<double> GetHThetaTheta(const MatrixXd x,
 
 
 SparseMatrix<double> GetHThetaXCore(const MatrixXd e_z,
-				    const MatrixXd e_mu,
-				    const MatrixXd e_lambda,
-				    const VectorXd x_indices,
-				    const bool full_x = true) {
+                        				    const MatrixXd e_mu,
+                        				    const MatrixXd e_lambda,
+                        				    const VectorXd x_indices,
+                        				    const bool full_x = true) {
   // Theta refers to the complete collection of parameters (mu, lambda, pi).
   // This constructs d^2 H / d theta dx'.  The rows are theta, and the columns
   // are x.
@@ -2776,33 +2776,33 @@ SparseMatrix<double> GetHThetaXCore(const MatrixXd e_z,
     for (int a = 0; a < p_tot; a++) {
       int this_x_index = x_ind.XCoord(x_ind_row, a);
       for (int k = 0; k < k_tot; k++) {
-	for (int b = 0; b < p_tot; b++) {
-	  double this_z = e_z(n, k);
-	  int this_ab_index = GetUpperTriangularIndex(a, b);
+      	for (int b = 0; b < p_tot; b++) {
+      	  double this_z = e_z(n, k);
+      	  int this_ab_index = GetUpperTriangularIndex(a, b);
 
-	  // Sensitivity of x to the first order means.
-	  t.push_back(Triplet(ind.MuCoord(k, b),
-			      this_x_index,
-			      this_z * e_lambda(this_ab_index, k)));
+      	  // Sensitivity of x to the first order means.
+      	  t.push_back(Triplet(ind.MuCoord(k, b),
+      			      this_x_index,
+      			      this_z * e_lambda(this_ab_index, k)));
 
-	  // Sensitivity of x to the lambda.
-	  t.push_back(Triplet(ind.LambdaCoord(k, b, a),
-			      this_x_index,
-			      this_z * e_mu(b, k)));
+      	  // Sensitivity of x to the lambda.
+      	  t.push_back(Triplet(ind.LambdaCoord(k, b, a),
+      			      this_x_index,
+      			      this_z * e_mu(b, k)));
 
-	  // Sensitivity of xa_xb to lambda.
-	  int this_x2_index = x_ind.X2Coord(x_ind_row, a, b);
-	  if (a == b) {
-	    t.push_back(Triplet(ind.LambdaCoord(k, b, a),
-				this_x2_index,
-				-0.5 * this_z));
-	  } else if (a < b) {
-	    // Only when a < b so as not to double count.
-	    t.push_back(Triplet(ind.LambdaCoord(k, b, a),
-				this_x2_index,
-				-1.0 * this_z));
-	  }
-	} // b loop
+      	  // Sensitivity of xa_xb to lambda.
+      	  int this_x2_index = x_ind.X2Coord(x_ind_row, a, b);
+      	  if (a == b) {
+      	    t.push_back(Triplet(ind.LambdaCoord(k, b, a),
+      				this_x2_index,
+      				-0.5 * this_z));
+      	  } else if (a < b) {
+      	    // Only when a < b so as not to double count.
+      	    t.push_back(Triplet(ind.LambdaCoord(k, b, a),
+      				this_x2_index,
+      				-1.0 * this_z));
+      	  }
+      	} // b loop
       } // k loop
     } // a loop
   }
@@ -3007,12 +3007,12 @@ VectorXd PredictPerturbationEffect(MatrixXd x,
 
 // [[Rcpp::export]]
 MatrixXd GetLRVBCorrectionTerm(MatrixXd x,
-			       MatrixXd e_mu,
-			       MatrixXd e_mu2,
-			       MatrixXd e_lambda,
-			       MatrixXd e_z,
-			       SparseMatrix<double> theta_cov,
-			       bool verbose=false) {
+                  			       MatrixXd e_mu,
+                  			       MatrixXd e_mu2,
+                  			       MatrixXd e_lambda,
+                  			       MatrixXd e_z,
+                  			       SparseMatrix<double> theta_cov,
+                  			       bool verbose=false) {
   if (verbose) {
     Rcpp::Rcout << "Getting htz\n";
   }
@@ -3061,12 +3061,12 @@ MatrixXd GetLRVBCorrectionTerm(MatrixXd x,
 
 // [[Rcpp::export]]
 MatrixXd CPPGetLRVBCovariance(MatrixXd x,
-			      MatrixXd e_mu,
-			      MatrixXd e_mu2,
-			      MatrixXd e_lambda,
-			      MatrixXd e_z,
-			      SparseMatrix<double> theta_cov,
-			      bool verbose=false) {
+                  			      MatrixXd e_mu,
+                  			      MatrixXd e_mu2,
+                  			      MatrixXd e_lambda,
+                  			      MatrixXd e_z,
+                  			      SparseMatrix<double> theta_cov,
+                  			      bool verbose=false) {
 
   MatrixXd lrvb_correction = GetLRVBCorrectionTerm(x, e_mu, e_mu2, e_lambda,
 						   e_z, theta_cov, verbose);
@@ -3084,8 +3084,8 @@ MatrixXd CPPGetLRVBCovariance(MatrixXd x,
 
 // [[Rcpp::export]]
 MatrixXd CPPGetLRVBCovarianceFromCorrection(MatrixXd lrvb_correction,
- 					    SparseMatrix<double> theta_cov,
-					    bool verbose=false) {
+                               					    SparseMatrix<double> theta_cov,
+                              					    bool verbose=false) {
   if (verbose) {
     Rcpp::Rcout << "Getting householder QR\n";
   }
@@ -3102,13 +3102,13 @@ MatrixXd CPPGetLRVBCovarianceFromCorrection(MatrixXd lrvb_correction,
 
 // [[Rcpp::export]]
 MatrixXd CPPGetLeverageScores(SparseMatrix<double> z_cov,
-			      SparseMatrix<double> x_cov,
-			      SparseMatrix<double> htx,
-			      SparseMatrix<double> htz,
-			      SparseMatrix<double> hzx,
-			      MatrixXd lrvb_correction,
-			      SparseMatrix<double> theta_cov,
-			      bool verbose=false) {
+                  			      SparseMatrix<double> x_cov,
+                  			      SparseMatrix<double> htx,
+                  			      SparseMatrix<double> htz,
+                  			      SparseMatrix<double> hzx,
+                  			      MatrixXd lrvb_correction,
+                  			      SparseMatrix<double> theta_cov,
+                  			      bool verbose=false) {
   if (verbose) {
     Rcpp::Rcout << "Getting htz_rzx\n";
   }

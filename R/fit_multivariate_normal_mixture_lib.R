@@ -101,7 +101,12 @@ GenerateSamplePriors <- function(x, k, prior.obs=1) {
   # be a conservative etsimate of the true standard deviation, and add one
   # prior observation.
   x.scale <- apply(apply(x, 2, range), 2, diff) / 2
-  mu.prior.info.mat <- diag(prior.obs / (x.scale ^ 2))
+  if (p > 1) {
+    mu.prior.info.mat <- diag(x=prior.obs / (x.scale ^ 2))    
+  } else {
+    # Seriously, R?  diag() of a single number is a 0x0 matrix.
+    mu.prior.info.mat <- matrix(prior.obs / (x.scale ^ 2))
+  }
   mu.prior.info <- matrix(ConvertSymmetricMatrixToVector(mu.prior.info.mat),
                           nrow=matrix.size, ncol=k)
 
@@ -285,12 +290,12 @@ GetVariationalSolution <- function(x, e.mu, e.mu2=NULL,
 
     # Pi update
     if (fit.pi) {
-      pi.alpha <- colSums(e.z)
+      pi.par <- colSums(e.z)
       if (use.pi.prior) {
-        pi.alpha <- pi.alpha + priors$p.prior.alpha
+        pi.par <- pi.par + priors$p.prior.alpha
       }
-      e.log.pi <- GetELogDirichlet(pi.alpha)
-      e.pi <- pi.alpha / n 
+      e.log.pi <- GetELogDirichlet(pi.par)
+      e.pi <- pi.par / sum(pi.par)
       pi.diff <- sum(abs(e.log.pi - old.e.log.pi))
     }
 
@@ -332,7 +337,7 @@ GetVariationalSolution <- function(x, e.mu, e.mu2=NULL,
 
     if (keep.updates) {
       updates[[iter]] <- list(e.mu=e.mu, e.mu2=e.mu2, e.lambda=e.lambda,
-                              e.log.det.lambda=e.log.det.lambda,
+                              e.log.det.lambda=e.log.det.lambda, pi.par=pi.par,
                               e.log.pi=e.log.pi, lambda.par=lambda.par, n.par=n.par,
                               z.counts=colSums(e.z))
     }
@@ -344,7 +349,7 @@ GetVariationalSolution <- function(x, e.mu, e.mu2=NULL,
   }
   return(list(e.mu=e.mu, e.mu2=e.mu2, e.lambda=e.lambda,
               e.log.det.lambda=e.log.det.lambda,
-              e.pi=e.pi, e.log.pi=e.log.pi, e.z=e.z,
+              e.pi=e.pi, e.log.pi=e.log.pi, e.z=e.z, pi.par=pi.par,
               lambda.par=lambda.par, n.par=n.par, updates=updates,
               elbo=unlist(elbo.list),
               entropy=unlist(entropy.list),
@@ -523,11 +528,11 @@ CoreCovarianceFromGibbs <- function(mu.draws, lambda.draws, pi.draws) {
 }
 
 
-GetThetaCovariance <- function(e.mu, e.mu2, lambda.par, n.par, e.z,
+GetThetaCovariance <- function(e.mu, e.mu2, lambda.par, n.par, pi.par,
                                fit.mu=TRUE, fit.lambda=TRUE, fit.pi=TRUE) {
   mu.cov <- GetMuVariance(e.mu, e.mu2)
   lambda.cov <- GetLambdaVariance(lambda.par, n.par)
-  log.pi.cov <- GetLogPiVariance(colSums(e.z))
+  log.pi.cov <- GetLogPiVariance(pi.par)
 
   # Zero out the matrices we won't fit.
   if (!fit.mu) {

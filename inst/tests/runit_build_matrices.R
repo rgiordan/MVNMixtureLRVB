@@ -754,7 +754,7 @@ TestLRVBFunctions <- function() {
                                   e.mu2=vb.optimum$e.mu2,
                                   lambda.par=vb.optimum$lambda.par,
                                   n.par=vb.optimum$n.par,
-                                  e.z=vb.optimum$e.z,
+                                  pi.par=vb.optimum$pi.par,
                                   fit.mu=TRUE, fit.lambda=TRUE, fit.pi=TRUE)
 
   # Make sure all the different ways of getting the LRVB correction are the same.

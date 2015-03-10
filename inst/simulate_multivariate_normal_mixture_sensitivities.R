@@ -55,7 +55,7 @@ vb.optimum <-
 
 theta.cov <- GetThetaCovariance(e.mu=vb.optimum$e.mu, e.mu2=vb.optimum$e.mu2,
                                 lambda.par=vb.optimum$lambda.par, n.par=vb.optimum$n.par,
-                                e.z=vb.optimum$e.z,
+                                pi.par=vb.optimum$pi.par,
                                 fit.mu=fit.mu, fit.lambda=fit.lambda, fit.pi=fit.pi)
 
 lrvb.theta.cov <- CPPGetLRVBCovariance(x=x,

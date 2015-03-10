@@ -64,7 +64,7 @@ vb.optimum <-
 vb.opt.time <- Sys.time() - vb.opt.time
 theta.cov <- GetThetaCovariance(e.mu=vb.optimum$e.mu, e.mu2=vb.optimum$e.mu2,
                                 lambda.par=vb.optimum$lambda.par, n.par=vb.optimum$n.par,
-                                e.z=vb.optimum$e.z,
+                                pi.par=vb.optimum$pi.par,
                                 fit.mu=TRUE, fit.lambda=TRUE, fit.pi=TRUE)
 
 lrvb.time <- Sys.time()
