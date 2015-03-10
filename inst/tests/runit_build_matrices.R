@@ -539,7 +539,7 @@ TestSensitivities <- function() {
   par <- GenerateSampleParams(k=k, p=p, vars.scale=0.4^2)
   lambda.par <- InvertLinearizedMatrices(VectorizeMatrixList(par$true.sigma))
   data <- GenerateMultivariateData(n, par$true.means, par$true.sigma, par$true.probs)
-  priors <- GenerateSamplePriors(x=data$x, k=k, lambda.scale=0.01)
+  priors <- GenerateSamplePriors(x=data$x, k=k)
 
   e.mu <- par$true.means
   e.mu2 <- GetVectorizedOuterProductMatrix(e.mu)
@@ -622,7 +622,7 @@ TestSensitivitiesToX <- function() {
 
   lambda.par <- InvertLinearizedMatrices(VectorizeMatrixList(par$true.sigma))
   data <- GenerateMultivariateData(n, par$true.means, par$true.sigma, par$true.probs)
-  priors <- GenerateSamplePriors(x=data$x, k=k, lambda.scale=0.01)
+  priors <- GenerateSamplePriors(x=data$x, k=k)
 
   e.mu <- par$true.means
   e.mu2 <- GetVectorizedOuterProductMatrix(e.mu)
@@ -730,7 +730,7 @@ TestLRVBFunctions <- function() {
   par <- GenerateSampleParams(k=k, p=p, vars.scale=0.4^2)
   lambda.par <- InvertLinearizedMatrices(VectorizeMatrixList(par$true.sigma))
   data <- GenerateMultivariateData(n, par$true.means, par$true.sigma, par$true.probs)
-  priors <- GenerateSamplePriors(x=data$x, k=k, lambda.scale=0.01)
+  priors <- GenerateSamplePriors(x=data$x, k=k)
 
   e.mu <- par$true.means
   e.mu2 <- GetVectorizedOuterProductMatrix(e.mu)
@@ -818,7 +818,7 @@ TestUpdateFunctionsWithPriors <- function () {
   n.par <- rep(0, k)
   
   # Make some priors
-  priors <- GenerateSamplePriors(x, k, 10)
+  priors <- GenerateSamplePriors(x, k)
   
   # Lambda update.
   # Check the n prior:

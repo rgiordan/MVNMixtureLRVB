@@ -82,22 +82,38 @@ GenerateSampleParams <- function(k, p, vars.scale = 0.4, anisotropy=0, random.ro
 }
 
 
-GenerateSamplePriors <- function(x, k, lambda.scale=1) {
+GenerateSamplePriors <- function(x, k, prior.obs=1) {
+  # Automatically generate reasonable data-based priors.
+  #
+  # Args:
+  #   - x: Data matrix with observations in rows and features in columns.
+  #   - k: The number of components to be fit.
+  #   - prior.obs: The number of "prior observations"
+
   p <- ncol(x)
   n <- nrow(x)
   matrix.size <- (p * (p + 1)) / 2
-  mu.prior.mean  <- matrix(rep(0, p * k), nrow=p, ncol=k)
-  x.scale <- diff(range(x))
-  mu.prior.info <- matrix(3 / (x.scale ^ 2), matrix.size, k)
 
-  lambda.prior.n <- rep(p, k) / 1000
+  # Set the prior means to be the overall means.
+  mu.prior.mean  <- matrix(colMeans(x), nrow=p, ncol=k)
+  
+  # Assume prior standard deviation of the full range, which one might hope to
+  # be a conservative etsimate of the true standard deviation, and add one
+  # prior observation.
+  x.scale <- apply(apply(x, 2, range), 2, diff) / 2
+  mu.prior.info.mat <- diag(prior.obs / (x.scale ^ 2))
+  mu.prior.info <- matrix(ConvertSymmetricMatrixToVector(mu.prior.info.mat),
+                          nrow=matrix.size, ncol=k)
+
+  # One observation for the lambda prior.
+  lambda.prior.n <- rep(prior.obs, k)
   lambda.prior.v.inv.list <- list()
   for (this.k in 1:k) {
-    lambda.prior.v.inv.list[[this.k]] <- lambda.scale * (x.scale ^ 2) * diag(p) / (1000 * p)
+    lambda.prior.v.inv.list[[this.k]] <- prior.obs * diag(x.scale ^ 2)
   }
   lambda.prior.v.inv <- VectorizeMatrixList(lambda.prior.v.inv.list)
 
-  p.prior.alpha <- rep(1, k)
+  p.prior.alpha <- rep(prior.obs, k)
   return(list(mu.prior.mean=mu.prior.mean, mu.prior.info=mu.prior.info,
               lambda.prior.v.inv=lambda.prior.v.inv, lambda.prior.n=lambda.prior.n,
               p.prior.alpha=p.prior.alpha))

@@ -33,7 +33,7 @@ par <- GenerateSampleParams(k=k, p=p, vars.scale=vars.scale,
                             anisotropy=anisotropy, random.rotation=FALSE)
 
 data <- GenerateMultivariateData(n, par$true.means, par$true.sigma, par$true.probs)
-priors <- GenerateSamplePriors(x=data$x, k=k, lambda.scale=0.01)
+priors <- GenerateSamplePriors(x=data$x, k=k)
 analysis.hash <- digest(list(data, par))
 
 true.lambda <- InvertLinearizedMatrices(VectorizeMatrixList(par$true.sigma))

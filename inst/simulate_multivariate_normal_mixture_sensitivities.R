@@ -21,7 +21,7 @@ vars.scale <- 0.5
 analysis.name <- sprintf("n%d_k%d_p%d_vars%f", n, k, p, vars.scale)
 par <- GenerateSampleParams(k=k, p=p, vars.scale=vars.scale)
 data <- GenerateMultivariateData(n, par$true.means, par$true.sigma, par$true.probs)
-priors <- GenerateSamplePriors(x=data$x, k=k, lambda.scale=0.01)
+priors <- GenerateSamplePriors(x=data$x, k=k)
 analysis.hash <- digest(list(data, par))
 true.lambda <- InvertLinearizedMatrices(VectorizeMatrixList(par$true.sigma))
 true.log.det.lambda <- LogDeterminantOfLinearizedMatrices(true.lambda)
