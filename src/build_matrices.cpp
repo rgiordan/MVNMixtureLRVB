@@ -15,7 +15,6 @@ using Eigen::HouseholderQR;
 typedef Eigen::MappedSparseMatrix<double> MappedSpMat;
 typedef Eigen::Map<MatrixXd> MappedMat;
 typedef Eigen::Map<VectorXd> MappedVec;
-using Eigen::HouseholderQR;
 typedef Eigen::Triplet<double> Triplet; // For populating sparse matrices
 
 
@@ -1633,7 +1632,7 @@ Rcpp::List UpdateMuPosterior(const MatrixXd x,
         z_tot * this_e_lambda_mat * this_data_mean;
 
       Eigen::LLT<MatrixXd> info_llt;
-      info_llt.compute(z_tot * this_e_lambda_inv_mat + this_mu_prior_info);
+      info_llt.compute(z_tot * this_e_lambda_mat + this_mu_prior_info);
       this_mean_vec = info_llt.solve(this_mean_vec);
       MatrixXd this_variance = info_llt.solve(identity_p);
 
@@ -1797,7 +1796,7 @@ Rcpp::List UpdateLambdaPosterior(const MatrixXd x,
 
 // [[Rcpp::export]]
 VectorXd WishartELogDet(const MatrixXd lambda_par,
-			const VectorXd n_par) {
+			                  const VectorXd n_par) {
   // Args:
   //   - lambda_par: A (p + 1) * p / 2 by k matrix of the "V" terms from 
   //    the wishart distribution of lambda.
@@ -1824,13 +1823,16 @@ VectorXd WishartELogDet(const MatrixXd lambda_par,
     MatrixXd v(p_tot, p_tot);
     for (int a = 0; a < p_tot; a++) {
       for (int b = 0; b < p_tot; b++) {
-	v(a, b) = lambda_par(GetUpperTriangularIndex(a, b), k);
+      	v(a, b) = lambda_par(GetUpperTriangularIndex(a, b), k);
       }
     }
 
+    // Assume it is positive definite and get the log determinant with the
+    // Householder decomposition
+    HouseholderQR<MatrixXd> v_housholder = v.householderQr();
     e_log_det(k) = (p_tot * log(2) +
-		    log(v.determinant()) +
-		    CppMultivariateDigamma(n_par(k) / 2, p_tot));
+            		    v_housholder.logAbsDeterminant() +
+            		    CppMultivariateDigamma(n_par(k) / 2, p_tot));
   }
   return e_log_det;
 }
