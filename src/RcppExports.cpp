@@ -4,8 +4,6 @@
 #include <RcppEigen.h>
 #include <Rcpp.h>
 
-using namespace Rcpp;
-
 using Eigen::Map; 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -15,8 +13,9 @@ using Eigen::HouseholderQR;
 typedef Eigen::MappedSparseMatrix<double> MappedSpMat;
 typedef Eigen::Map<MatrixXd> MappedMat;
 typedef Eigen::Map<VectorXd> MappedVec;
-using Eigen::HouseholderQR;
 typedef Eigen::Triplet<double> Triplet; // For populating sparse matrices
+
+using namespace Rcpp;
 
 // GetMatrixSizeFromUTSize
 int GetMatrixSizeFromUTSize(int ut_size);
@@ -73,6 +72,24 @@ BEGIN_RCPP
         Rcpp::RNGScope __rngScope;
         Rcpp::traits::input_parameter< const VectorXd >::type x_vec(x_vecSEXP );
         MatrixXd __result = ConvertVectorToSymmetricMatrix(x_vec);
+        PROTECT(__sexp_result = Rcpp::wrap(__result));
+    }
+    UNPROTECT(1);
+    return __sexp_result;
+END_RCPP
+}
+// GetZCoordinate
+int GetZCoordinate(int n, int k, int n_tot, int k_tot);
+RcppExport SEXP MVNMixtureLRVB_GetZCoordinate(SEXP nSEXP, SEXP kSEXP, SEXP n_totSEXP, SEXP k_totSEXP) {
+BEGIN_RCPP
+    SEXP __sexp_result;
+    {
+        Rcpp::RNGScope __rngScope;
+        Rcpp::traits::input_parameter< int >::type n(nSEXP );
+        Rcpp::traits::input_parameter< int >::type k(kSEXP );
+        Rcpp::traits::input_parameter< int >::type n_tot(n_totSEXP );
+        Rcpp::traits::input_parameter< int >::type k_tot(k_totSEXP );
+        int __result = GetZCoordinate(n, k, n_tot, k_tot);
         PROTECT(__sexp_result = Rcpp::wrap(__result));
     }
     UNPROTECT(1);
@@ -1014,6 +1031,21 @@ BEGIN_RCPP
         Rcpp::traits::input_parameter< const MatrixXd >::type e_lambda(e_lambdaSEXP );
         Rcpp::traits::input_parameter< const VectorXd >::type x_indices(x_indicesSEXP );
         SparseMatrix<double> __result = GetHZXSubset(n_tot, e_mu, e_lambda, x_indices);
+        PROTECT(__sexp_result = Rcpp::wrap(__result));
+    }
+    UNPROTECT(1);
+    return __sexp_result;
+END_RCPP
+}
+// GetHZDelta
+SparseMatrix<double> GetHZDelta(const MatrixXd e_z);
+RcppExport SEXP MVNMixtureLRVB_GetHZDelta(SEXP e_zSEXP) {
+BEGIN_RCPP
+    SEXP __sexp_result;
+    {
+        Rcpp::RNGScope __rngScope;
+        Rcpp::traits::input_parameter< const MatrixXd >::type e_z(e_zSEXP );
+        SparseMatrix<double> __result = GetHZDelta(e_z);
         PROTECT(__sexp_result = Rcpp::wrap(__result));
     }
     UNPROTECT(1);

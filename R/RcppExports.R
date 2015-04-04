@@ -17,6 +17,10 @@ ConvertVectorToSymmetricMatrix <- function(x_vec) {
     .Call('MVNMixtureLRVB_ConvertVectorToSymmetricMatrix', PACKAGE = 'MVNMixtureLRVB', x_vec)
 }
 
+GetZCoordinate <- function(n, k, n_tot, k_tot) {
+    .Call('MVNMixtureLRVB_GetZCoordinate', PACKAGE = 'MVNMixtureLRVB', n, k, n_tot, k_tot)
+}
+
 GetXCoordinate <- function(n, p, n_tot, p_tot) {
     .Call('MVNMixtureLRVB_GetXCoordinate', PACKAGE = 'MVNMixtureLRVB', n, p, n_tot, p_tot)
 }
@@ -231,6 +235,10 @@ GetHZX <- function(n_tot, e_mu, e_lambda) {
 
 GetHZXSubset <- function(n_tot, e_mu, e_lambda, x_indices) {
     .Call('MVNMixtureLRVB_GetHZXSubset', PACKAGE = 'MVNMixtureLRVB', n_tot, e_mu, e_lambda, x_indices)
+}
+
+GetHZDelta <- function(e_z) {
+    .Call('MVNMixtureLRVB_GetHZDelta', PACKAGE = 'MVNMixtureLRVB', e_z)
 }
 
 PredictPerturbationEffect <- function(x, tx_cov, x_n, x_p, delta) {

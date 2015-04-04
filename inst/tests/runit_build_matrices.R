@@ -904,6 +904,17 @@ TestUpdateFunctionsWithPriors <- function () {
   }
 }
 
+TestGetHZDelta <- function() {
+  n <- 10
+  k <- 3
+  sample.z <- matrix(runif(n * k), nrow=n, ncol=k)
+  sample.z <- sample.z / rowSums(sample.z)
+  hzd <- GetHZDelta(sample.z)
+  checkEqualsNumeric(hzd,
+                     diag(as.numeric(t(sample.z))) %*%
+                         kronecker(diag(n), matrix(1, nrow=k, ncol=1)))
+}
+
 #
 #
 # TestGammaFunctions()
@@ -924,3 +935,4 @@ TestUpdateFunctionsWithPriors <- function () {
 # TestXVarianceSubset()
 # TestSensitivitiesToX()
 # TestLRVBFunctions()
+# TestGetHZDelta()

@@ -335,6 +335,14 @@ int ZParameterIndices::Dim() {
   return dim;
 }
 
+// [[Rcpp::export]]
+int GetZCoordinate(int n, int k, int n_tot, int k_tot) {
+  // Get the 0-indexed linear coordinate of a z term.
+  ZParameterIndices z_ind(n_tot, k_tot);
+  return z_ind.ZCoord(n, k);
+}
+
+
 
 // This class provides linear indices for each
 // parameter in the x parameter matrix
@@ -617,9 +625,9 @@ VectorXd PackVBParameters(const MatrixXd e_z,
 
 // [[Rcpp::export]]
 Rcpp::List UnpackVBParameters(const VectorXd par,
-			      const int n_tot,
-			      const int p_tot,
-			      const int k_tot) {
+                  			      const int n_tot,
+                  			      const int p_tot,
+                  			      const int k_tot) {
   // Convert a single vector containing all the VB parameterse
   // into a list with each parameter contained separately.
 
@@ -645,9 +653,9 @@ Rcpp::List UnpackVBParameters(const VectorXd par,
     for (int a = 0; a < p_tot; a++) {
       e_mu(a, k) = par(ind.MuCoord(k, a));
       for (int b = 0; b <= a; b++) {
-	int ut_index = GetUpperTriangularIndex(b, a);
-	e_mu2(ut_index, k) = par(ind.Mu2Coord(k, a, b));
-	e_lambda(ut_index, k) = par(ind.LambdaCoord(k, a, b));
+      	int ut_index = GetUpperTriangularIndex(b, a);
+      	e_mu2(ut_index, k) = par(ind.Mu2Coord(k, a, b));
+      	e_lambda(ut_index, k) = par(ind.LambdaCoord(k, a, b));
       }
     }
   }
@@ -670,9 +678,9 @@ Rcpp::List UnpackVBParameters(const VectorXd par,
 
 // [[Rcpp::export]]
 Rcpp::List UnpackVBThetaParameters(const VectorXd par,
-				   const int n_tot,
-				   const int p_tot,
-				   const int k_tot) {
+                        				   const int n_tot,
+                        				   const int p_tot,
+                        				   const int k_tot) {
   // Convert a single vector containing the VB theta parameters
   // into a list with each parameter contained separately.
 
@@ -698,18 +706,18 @@ Rcpp::List UnpackVBThetaParameters(const VectorXd par,
     for (int a = 0; a < p_tot; a++) {
       e_mu(a, k) = par(ind.MuCoord(k, a));
       for (int b = 0; b <= a; b++) {
-	int ut_index = GetUpperTriangularIndex(b, a);
-	e_mu2(ut_index, k) = par(ind.Mu2Coord(k, a, b));
-	e_lambda(ut_index, k) = par(ind.LambdaCoord(k, a, b));
+      	int ut_index = GetUpperTriangularIndex(b, a);
+      	e_mu2(ut_index, k) = par(ind.Mu2Coord(k, a, b));
+      	e_lambda(ut_index, k) = par(ind.LambdaCoord(k, a, b));
       }
     }
   }
 
   return Rcpp::List::create(Rcpp::Named("e_mu") = e_mu,
-			    Rcpp::Named("e_mu2") = e_mu2,
+                  			    Rcpp::Named("e_mu2") = e_mu2,
                             Rcpp::Named("e_lambda") = e_lambda,
                             Rcpp::Named("e_log_det_lambda") = e_log_det_lambda,
-			    Rcpp::Named("e_log_pi") = e_log_pi);
+                  			    Rcpp::Named("e_log_pi") = e_log_pi);
 }
 
 // [[Rcpp::export]]
@@ -2944,13 +2952,49 @@ SparseMatrix<double> GetHZX(const int n_tot,
 
 // [[Rcpp::export]]
 SparseMatrix<double> GetHZXSubset(const int n_tot,
-				  const MatrixXd e_mu,
-				  const MatrixXd e_lambda,
-				  const VectorXd x_indices) {
+                        				  const MatrixXd e_mu,
+                        				  const MatrixXd e_lambda,
+                        				  const VectorXd x_indices) {
   VectorXd empty_x(1);
   return GetHZXCore(n_tot, e_mu, e_lambda, x_indices, false);
 }
 
+
+// [[Rcpp::export]]
+SparseMatrix<double> GetHZDelta(const MatrixXd e_z) {
+  // A slightly misnamed sensitivity of the perturbed indicators
+  // to the perturbations.  This can be used to get derivatives
+  // of theta with respect to delta by using the relationship
+  // h_theta_delta = h_theta_z * h_z_delta
+
+  int n_tot = e_z.rows();
+  int k_tot = e_z.cols();
+
+  ZParameterIndices z_ind(n_tot, k_tot);
+
+  SparseMatrix<double> h_zd(n_tot * k_tot, n_tot);
+  h_zd.setZero();
+
+  std::vector<Triplet> t;
+
+  t.reserve(n_tot * k_tot);
+
+  for (int n = 0; n < n_tot; n++) {
+    for (int k = 0; k < k_tot; k++) {
+      t.push_back(Triplet(z_ind.ZCoord(n, k), n,
+                          e_z(n, k)));
+    }
+  }
+
+
+  h_zd.setFromTriplets(t.begin(), t.end());
+  h_zd.makeCompressed();
+  return h_zd;
+}
+
+
+////////////////////////////////////////////
+// Eigen matrix multiplication
 
 
 // [[Rcpp::export]]

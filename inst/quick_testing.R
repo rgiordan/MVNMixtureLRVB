@@ -14,7 +14,7 @@ if (kBuildPackage) {
     # After this you have to also manually copy the typedefs to the top of
     # the RcppExports.cpp file.
   }
-  install(kSourceLocation)  
+  install(kSourceLocation)
   # You may also need to restart R.
   detach("package:MVNMixtureLRVB")
   library(MVNMixtureLRVB)
