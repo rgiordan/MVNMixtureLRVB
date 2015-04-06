@@ -1336,13 +1336,13 @@ double CompleteLogLikelihoodWithPriors(const MatrixXd x,
     for (int n = 0; n < n_tot; n++) {
       VectorXd this_x = x.block(n, 0, 1, p_tot).adjoint();
       double log_lik = MVNLogLikelihoodPoint(this_x,
-					     this_mu,
-					     this_mu2,
-					     this_lambda,
-					     log_det_lambda(k),
-					     log_pi(k));
+                              					     this_mu,
+                              					     this_mu2,
+                              					     this_lambda,
+                              					     log_det_lambda(k),
+                              					     log_pi(k));
       if (debug) {
-	Rcpp::Rcout << n << ", " << k << ", " << log_lik << "\n";
+      	Rcpp::Rcout << n << ", " << k << ", " << log_lik << "\n";
       }
       tot_log_lik += z(n, k) * log_lik;
     }
@@ -1459,10 +1459,10 @@ double MultinouliiEntropy(const MatrixXd p_mat) {
   for (int n = 0; n < n_tot; n++) {
     for (int k = 0; k < k_tot; k++) {
       if (p_mat(n, k) > 1e-8) {
-	// Anything smaller than this is probably small enough
-	// that we do not need to add it.
-	// TODO: Choose this bound in a more principled way.
-	entropy -= p_mat(n, k) * log(p_mat(n, k));
+      	// Anything smaller than this is probably small enough
+      	// that we do not need to add it.
+      	// TODO: Choose this bound in a more principled way.
+      	entropy -= p_mat(n, k) * log(p_mat(n, k));
       }
     }
   }
@@ -1622,9 +1622,6 @@ Rcpp::List UpdateMuPosterior(const MatrixXd x,
     if (use_prior) {
       // Using formula (3.13) from Gelman's Bayesian Data Analysis.
       // TODO: This could surely be done more efficiently.
-
-      // TODO: this section is wrong: lambda is the information,
-      // and the inverse is the variance.
 
       MatrixXd this_e_lambda_mat =
         ConvertVectorToSymmetricMatrix(
@@ -2335,12 +2332,12 @@ SparseMatrix<double> GetXVarianceSubset(const MatrixXd x,
 
 // [[Rcpp::export]]
 int GetZMatrixInPlace(Rcpp::NumericMatrix z,
-		      const MatrixXd x,
-		      const MatrixXd e_mu,
-		      const MatrixXd e_mu2,
-		      const MatrixXd e_lambda,
-		      const VectorXd e_log_det_lambda,
-		      const VectorXd e_log_pi) {
+            		      const MatrixXd x,
+            		      const MatrixXd e_mu,
+            		      const MatrixXd e_mu2,
+            		      const MatrixXd e_lambda,
+            		      const VectorXd e_log_det_lambda,
+            		      const VectorXd e_log_pi) {
   // Args:
   //   - z: An n by k matrix that will be populated with the z values.
   //   - x: An n by p matrix of observations
@@ -2395,13 +2392,13 @@ int GetZMatrixInPlace(Rcpp::NumericMatrix z,
     for (int n = 0; n < n_tot; n++) {
       // VectorXd must be a column vector.
       z(n, k) = MVNLogLikelihoodPoint(x.block(n, 0, 1, p_tot).adjoint(),
-				      e_mu.block(0, k, p_tot, 1),
-				      e_mu2.block(0, k, ind.MatrixSize(), 1),
-				      e_lambda.block(0, k, ind.MatrixSize(), 1),
-				      e_log_det_lambda(k),
-				      e_log_pi(k));
+                        				      e_mu.block(0, k, p_tot, 1),
+                        				      e_mu2.block(0, k, ind.MatrixSize(), 1),
+                        				      e_lambda.block(0, k, ind.MatrixSize(), 1),
+                        				      e_log_det_lambda(k),
+                        				      e_log_pi(k));
       if (k == 0 || z(n, k) > z_row_max(n)) {
-	z_row_max(n) = z(n, k);
+      	z_row_max(n) = z(n, k);
       }
     }
   }
@@ -2427,11 +2424,11 @@ int GetZMatrixInPlace(Rcpp::NumericMatrix z,
 
 // [[Rcpp::export]]
 Rcpp::NumericMatrix GetZMatrix(const MatrixXd x,
-			       const MatrixXd e_mu,
-			       const MatrixXd e_mu2,
-			       const MatrixXd e_lambda,
-			       const VectorXd e_log_det_lambda,
-			       const VectorXd e_log_pi) {
+                  			       const MatrixXd e_mu,
+                  			       const MatrixXd e_mu2,
+                  			       const MatrixXd e_lambda,
+                  			       const VectorXd e_log_det_lambda,
+                  			       const VectorXd e_log_pi) {
   // Args and returns: The same as GetZMatrixInPlace.
   int n_tot = x.rows();
   int k_tot = e_mu.cols();
@@ -2439,8 +2436,8 @@ Rcpp::NumericMatrix GetZMatrix(const MatrixXd x,
 
   // Dimension checks are run in GetZMatrixInPlace.
   GetZMatrixInPlace(z,
-		    x, e_mu, e_mu2, e_lambda,
-		    e_log_det_lambda, e_log_pi);
+            		    x, e_mu, e_mu2, e_lambda,
+            		    e_log_det_lambda, e_log_pi);
   return z;
 }
 
@@ -2484,14 +2481,14 @@ SparseMatrix<double> GetZCovariance(MatrixXd z_mat) {
     //Rcpp::Rcout << this_z_cov << "\n";
     for (int k1 = 0; k1 < k_tot; k1++) {
       for (int k2 = 0; k2 <= k1; k2++) {
-	var_z_t.push_back(Triplet(ind.ZCoord(n, k1),
-				  ind.ZCoord(n, k2),
-				  this_z_cov(k1, k2)));
-	if (k1 != k2) {
-	  var_z_t.push_back(Triplet(ind.ZCoord(n, k2),
-				    ind.ZCoord(n, k1),
-				    this_z_cov(k2, k1)));
-	}
+      	var_z_t.push_back(Triplet(ind.ZCoord(n, k1),
+      				  ind.ZCoord(n, k2),
+      				  this_z_cov(k1, k2)));
+      	if (k1 != k2) {
+      	  var_z_t.push_back(Triplet(ind.ZCoord(n, k2),
+      				    ind.ZCoord(n, k1),
+      				    this_z_cov(k2, k1)));
+      	}
       }
     }
   }
@@ -2665,35 +2662,35 @@ SparseMatrix<double> GetHThetaTheta(const MatrixXd x,
     for (int a = 0; a < p_tot; a++) {
       int mu_index = ind.MuCoord(k, a);
       for (int b = 0; b < p_tot; b++) {
-	// This is d2H / dmu_a dLambda_ab
-	t.push_back(Triplet(mu_index,
-			    ind.LambdaCoord(k, a, b),
-			    x_z_sum(b, k)));
-	t.push_back(Triplet(ind.LambdaCoord(k, a, b),
-			    mu_index,
-			    x_z_sum(b, k)));
+      	// This is d2H / dmu_a dLambda_ab
+      	t.push_back(Triplet(mu_index,
+      			    ind.LambdaCoord(k, a, b),
+      			    x_z_sum(b, k)));
+      	t.push_back(Triplet(ind.LambdaCoord(k, a, b),
+      			    mu_index,
+      			    x_z_sum(b, k)));
       }
     }
 
     // Next the second order mu sensitivities.
     for (int a = 0; a < p_tot; a++) {
       for (int b = 0; b <= a; b++) {
-	int mu2_index = ind.Mu2Coord(k, a, b);
-	
-	double this_sens;
-	if (a == b) {
-	  this_sens = -0.5 * z_sum(k);
-	} else {
-	  this_sens = -1.0 * z_sum(k);
-	}
+      	int mu2_index = ind.Mu2Coord(k, a, b);
+      	
+      	double this_sens;
+      	if (a == b) {
+      	  this_sens = -0.5 * z_sum(k);
+      	} else {
+      	  this_sens = -1.0 * z_sum(k);
+      	}
 
-	// This is d2H / d(mu_a mu_b) dLambda_ab
-	t.push_back(Triplet(mu2_index,
-			    ind.LambdaCoord(k, a, b),
-			    this_sens));
-	t.push_back(Triplet(ind.LambdaCoord(k, a, b),
-			    mu2_index,
-			    this_sens));
+      	// This is d2H / d(mu_a mu_b) dLambda_ab
+      	t.push_back(Triplet(mu2_index,
+      			    ind.LambdaCoord(k, a, b),
+      			    this_sens));
+      	t.push_back(Triplet(ind.LambdaCoord(k, a, b),
+      			    mu2_index,
+      			    this_sens));
       }
     }     
   }

@@ -187,9 +187,18 @@ GetVariationalSolution <- function(x, e.mu, e.mu2=NULL,
                                    use.lambda.prior=FALSE,
                                    use.mu.prior=FALSE,
                                    use.pi.prior=FALSE,
+                                   weights=NULL,
                                    tolerance=1e-5, max.iter=1000, elbo.every.n=Inf,
                                    debug=FALSE, keep.updates=FALSE, quiet=FALSE) {
   # priors should be a list like that returned by GenerateSamplePriors
+  #
+  # If not null, the rows of the z matrix are multiplied by the weights vector.
+  # Note: the weights are not in the derivatives, and are implemented inefficiently.
+  # If they become commonly used, they should be added to the C++ functions and
+  # kept track of separately from e.z.
+  #
+  # Note: The weights are not currently the same as removing a point, and I need
+  # to understand why.
 
   n <- nrow(x)
   p <- ncol(x)
@@ -207,6 +216,15 @@ GetVariationalSolution <- function(x, e.mu, e.mu2=NULL,
   # If not specified, fit with zero additional mu variance.
   if (is.null(e.mu2)) {
     e.mu2 <- GetVectorizedOuterProductMatrix(e.mu)
+  }
+
+  weight.mat <- NULL
+  if (!is.null(weights)) {
+    if (length(weights) != nrow(x)) {
+      stop("weights has the wrong length.")
+    }
+    weight.mat <- Diagonal(x=weights)
+    e.z <- as.matrix(weight.mat %*% e.z)
   }
 
   if (!fit.lambda) {
@@ -318,6 +336,9 @@ GetVariationalSolution <- function(x, e.mu, e.mu2=NULL,
                       x=x, e_mu=e.mu, e_mu2=e.mu2,
                       e_lambda=e.lambda, e_log_det_lambda=e.log.det.lambda,
                       e_log_pi=e.log.pi)
+    if (!is.null(weights)) {
+      e.z <- as.matrix(weight.mat %*% e.z)
+    }
 
     total.diff <- mu.diff + lambda.diff + pi.diff
 
