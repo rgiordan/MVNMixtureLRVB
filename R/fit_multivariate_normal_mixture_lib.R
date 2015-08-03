@@ -42,7 +42,7 @@ GetSymmetricMatrixVectorNames <- function(parameter, p, k=1, sep="_") {
   row.vec <- ConvertSymmetricMatrixToVector(row.mat)
   col.vec <- ConvertSymmetricMatrixToVector(col.mat)
   indices <- paste(row.vec, col.vec, sep=sep)
-  paramter.k <- parameter
+  parameter.k <- parameter
   if (k > 1) {
     parameter.k <- paste(parameter, 1:k, sep=sep)
   }
