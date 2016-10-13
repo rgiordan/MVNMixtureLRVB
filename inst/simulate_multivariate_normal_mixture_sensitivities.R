@@ -37,7 +37,7 @@ names(means.df) <- df.col.names
 
 
 ####################
-# Compute the VB fit
+# Compute the VB fit and LRVB leverage scores
 
 fit.mu <- TRUE
 fit.pi <- TRUE
@@ -89,6 +89,12 @@ if (kShowPlots) {
     geom_point(data=means.df, aes(x=X1, y=X2), color="red", size=5) +
     geom_point(data=vb.means.df, aes(x=X1, y=X2), color="green", size=5)
 }
+
+
+####################
+# Confirm that the LRVB sensitivities match the effects of actually perturbing the data.
+# This is really slow because we are refitting the VB model many times, but the point is to
+# illustrate that LRVB gives the same results much faster.
 
 delta <- 0.0001
 
@@ -169,49 +175,68 @@ grid.arrange(
 )
 
 
-x.col <- 1
-this.x.df <- filter(x.df, col == x.col)
-base.title <- sprintf("Effect of X%d perturbations on ", x.col)
+###################################
+# Visualize the leverage scores.
+
+mu.effect.df <- data.frame(mu.effect)
+names(mu.effect.df) <- GetMatrixVectorNames("mu", p=p, k=k)
+
+lambda.effect.df <- data.frame(lambda.effect)
+names(lambda.effect.df) <- GetSymmetricMatrixVectorNames("lambda", p, k)
+
+x.melt.df <- x.df
+x.melt.df$row <- 1:nrow(x.melt.df)
+x.melt.df <- melt(x.melt.df, id.vars=c("label", "row"))
+x.melt.df$col <- as.numeric(sub("^X", "", x.melt.df$variable))
+
+leverage.df <- 
+  inner_join(cbind(mu.effect.df, lambda.effect.df, perturbations),
+             mutate(x.df, row=1:nrow(x.df)), by=c("row"))
+
+this.x.col <- 1
+base.title <- sprintf("Effect of X%d perturbations on", x.col)
+this.leverage.df <- filter(leverage.df, col == this.x.col)
 grid.arrange(
-  ggplot(this.x.df) +
+  ggplot(this.leverage.df) +
     geom_density2d(aes(x=X1, y=X2)) +
     geom_point(aes(x=X1, y=X2, color=mu_1_1), size=4) +
     scale_colour_gradient2(low="red", high="yellow", mid="black", midpoint=0) +
     ggtitle(paste(base.title, "mu_1_1")),
-  ggplot(this.x.df) +
+  ggplot(this.leverage.df) +
     geom_density2d(aes(x=X1, y=X2)) +
     geom_point(aes(x=X1, y=X2, color=mu_1_2), size=4) +
     scale_colour_gradient2(low="red", high="yellow", mid="black", midpoint=0) +
     ggtitle(paste(base.title, "mu_1_2")),
-  ggplot(this.x.df) +
+  ggplot(this.leverage.df) +
     geom_density2d(aes(x=X1, y=X2)) +
     geom_point(aes(x=X1, y=X2, color=mu_2_1), size=4) +
     scale_colour_gradient2(low="red", high="yellow", mid="black", midpoint=0) +
     ggtitle(paste(base.title, "mu_2_1")),
-  ggplot(this.x.df) +
+  ggplot(this.leverage.df) +
     geom_density2d(aes(x=X1, y=X2)) +
     geom_point(aes(x=X1, y=X2, color=mu_2_2), size=4) +
     scale_colour_gradient2(low="red", high="yellow", mid="black", midpoint=0) +
     ggtitle(paste(base.title, "mu_2_2")),
   ncol=2)
 
+
 grid.arrange(
-  ggplot(this.x.df) +
+  ggplot(this.leverage.df) +
     geom_density2d(aes(x=X1, y=X2)) +
     geom_point(aes(x=X1, y=X2, color=lambda_1_1_1), size=4) +
     scale_colour_gradient2(low="red", high="yellow", mid="black", midpoint=0) +
     ggtitle(paste(base.title, "lambda_1_1_1")),
-  ggplot(this.x.df) +
+  ggplot(this.leverage.df) +
     geom_density2d(aes(x=X1, y=X2)) +
     geom_point(aes(x=X1, y=X2, color=lambda_1_2_2), size=4) +
     scale_colour_gradient2(low="red", high="yellow", mid="black", midpoint=0) +
     ggtitle(paste(base.title, "lambda_1_2_2")),
-  ggplot(this.x.df) +
+  ggplot(this.leverage.df) +
     geom_density2d(aes(x=X1, y=X2)) +
     geom_point(aes(x=X1, y=X2, color=lambda_2_1_1), size=4) +
     scale_colour_gradient2(low="red", high="yellow", mid="black", midpoint=0) +
     ggtitle(paste(base.title, "lambda_2_1_1")),
-  ggplot(this.x.df) +
+  ggplot(this.leverage.df) +
     geom_density2d(aes(x=X1, y=X2)) +
     geom_point(aes(x=X1, y=X2, color=lambda_2_2_2), size=4) +
     scale_colour_gradient2(low="red", high="yellow", mid="black", midpoint=0) +
@@ -219,14 +244,13 @@ grid.arrange(
   ncol=2)
 
 
-
 grid.arrange(
-  ggplot(x.df) +
+  ggplot(this.leverage.df) +
     geom_density2d(aes(x=X1, y=X2)) +
     geom_point(aes(x=X1, y=X2, color=lambda_1_1_2), size=4) +
     scale_colour_gradient2(low="red", high="yellow", mid="black", midpoint=0) +
     ggtitle(paste(base.title, "lambda_1_1_2")),
-  ggplot(x.df) +
+  ggplot(this.leverage.df) +
     geom_density2d(aes(x=X1, y=X2)) +
     geom_point(aes(x=X1, y=X2, color=lambda_2_1_2), size=4) +
     scale_colour_gradient2(low="red", high="yellow", mid="black", midpoint=0) +
