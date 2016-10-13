@@ -109,7 +109,7 @@ iter <- 0
 pb <- txtProgressBar(max=p * n, style=3)
 for (x.col in 1:p) {
   for (x.row in 1:n) {
-    setTxtProgressBar(pb, (x.row - 1) * p + x.col)
+    setTxtProgressBar(pb, (x.col - 1) * n + x.row)
     iter <- iter + 1
     new.x <- x
     new.x[x.row, x.col] <- new.x[x.row, x.col] + delta
